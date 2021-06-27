@@ -2,35 +2,55 @@ from deep_sudoku.utils import sudoku_utils
 import numpy as np
 
 
-def random_move_testing(check_valid_moves):
+def count_invalid_moves(new_board, solved):
+    return np.sum(np.logical_and(new_board != 0,
+                                 np.not_equal(new_board, solved)))
+
+
+def count_valid_moves(board, new_board, solved):
+    return np.sum(np.logical_and.reduce((board == 0,
+                                         new_board != 0,
+                                         np.equal(new_board, solved))))
+
+
+def test_random_moves():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
 
-    for i in range(100):
-        board_index = np.random.choice(range(len(sudokus)))
-        board = sudokus[board_index][0]
-        solved = sudokus[board_index][1]
-        new_board = board.copy()
+    rng = np.random.default_rng(1)
 
-        for j in range(20):
-            new_board = sudoku_utils.make_random_move(new_board, solved, valid_move=check_valid_moves)
-            assert (np.all(np.logical_or(np.equal(new_board, board), np.equal(new_board, solved))) == check_valid_moves)
+    for n_invalid_moves in range(20):
+        for n_valid_moves in range(20):
+            board_index = rng.choice(range(len(sudokus)))
+            board, solved = sudokus[board_index]
 
-
-def test_random_invalid_moves():
-    check_valid_moves = False
-    random_move_testing(check_valid_moves)
+            new_board = sudoku_utils.make_random_moves(board, solved, n_valid_moves, n_invalid_moves)
+            assert (count_invalid_moves(new_board, solved) == n_invalid_moves)
+            assert (count_valid_moves(board, new_board, solved) == n_valid_moves)
 
 
-def test_random_valid_moves():
-    check_valid_moves = True
-    random_move_testing(check_valid_moves)
-
-
-def test_random_move():
+def test_augmentation_functions():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
-    for i in range(100):
-        board_index = np.random.choice(range(len(sudokus)))
-        board = sudokus[board_index][0]
-        solved = sudokus[board_index][1]
-        new_board = sudoku_utils.make_random_move(board, solved)
-        assert (np.sum(~np.equal(board, new_board)) == 1)
+    rng = np.random.default_rng(1)
+
+    augmentation_functions = [sudoku_utils.permute_sudoku, sudoku_utils.transpose_sudoku, sudoku_utils.permute_rows,
+                              sudoku_utils.permute_cols, sudoku_utils.permute_row_blocks, sudoku_utils.permute_row_cols]
+
+    for i in range(20):
+        board_index = rng.choice(range(len(sudokus)))
+        _, solved = sudokus[board_index]
+
+        for augmentation in augmentation_functions:
+            new_solved = augmentation(solved, i)
+            assert sudoku_utils.validate_sudoku(new_solved)
+
+
+def test_augmentation():
+    sudokus, _ = sudoku_utils.load_latest_sudoku_list()
+    rng = np.random.default_rng(1)
+
+    for i in range(20):
+        board_index = rng.choice(range(len(sudokus)))
+        _, solved = sudokus[board_index]
+
+        new_solved = sudoku_utils.augment_sudoku(solved, i)
+        assert sudoku_utils.validate_sudoku(new_solved)
