@@ -28,29 +28,13 @@ def test_random_moves():
             assert (count_valid_moves(board, new_board, solved) == n_valid_moves)
 
 
-def test_augmentation_functions():
-    sudokus, _ = sudoku_utils.load_latest_sudoku_list()
-    rng = np.random.default_rng(1)
-
-    augmentation_functions = [sudoku_utils.permute_sudoku, sudoku_utils.transpose_sudoku, sudoku_utils.permute_rows,
-                              sudoku_utils.permute_cols, sudoku_utils.permute_row_blocks, sudoku_utils.permute_row_cols]
-
-    for i in range(20):
-        board_index = rng.choice(range(len(sudokus)))
-        _, solved = sudokus[board_index]
-
-        for augmentation in augmentation_functions:
-            new_solved = augmentation(solved, i)
-            assert sudoku_utils.validate_sudoku(new_solved)
-
-
 def test_augmentation():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
     rng = np.random.default_rng(1)
 
     for i in range(20):
         board_index = rng.choice(range(len(sudokus)))
-        _, solved = sudokus[board_index]
-
-        new_solved = sudoku_utils.augment_sudoku(solved, i)
-        assert sudoku_utils.validate_sudoku(new_solved)
+        board, solved = sudokus[board_index]
+        solved_array = np.array([solved])
+        augmented_solved_array = sudoku_utils.augment_sudokus(solved_array, rng)
+        assert sudoku_utils.validate_sudoku(augmented_solved_array[0])

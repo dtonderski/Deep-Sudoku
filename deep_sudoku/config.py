@@ -1,2 +1,5 @@
 SEEDS_PATH = "data/sudoku_seeds.txt"
 SUDOKU_LISTS_DIR = "data/sudoku_lists/"
+TRAIN_PATH = "data/train.pil"
+VAL_PATH = "data/val.pil"
+TEST_PATH = "data/test.pil"

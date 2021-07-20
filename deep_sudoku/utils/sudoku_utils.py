@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Generator
 
 import numpy as np
 from sudoku import Sudoku
@@ -23,9 +23,10 @@ def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]], int]
     else:
         start_line = 0
         for file in files:
-            current_line = file.split('_')[0]
-            if int(current_line) > start_line:
-                start_line = int(current_line)
+            if file.split('.')[-1] == 'pil':
+                current_line = file.split('_')[0]
+                if int(current_line) > start_line:
+                    start_line = int(current_line)
 
         with open('data/sudoku_lists/%d_sudokus.pil' % start_line, 'rb') as handle:
             sudokus = pickle.load(handle)
@@ -34,12 +35,12 @@ def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]], int]
 
 
 def solve_sudoku(board: np.ndarray) -> np.ndarray:
-    board_none = board.copy()
+    board_none = board.copy().astype('O')
     if np.any(board == 0):
         board_none[board_none == 0] = None
     puzzle = Sudoku(3)
     puzzle.board = board_none
-    return np.array(puzzle.solve().board)
+    return np.array(puzzle.solve().board).astype('uint8')
 
 
 def validate_sudoku(board: np.ndarray) -> bool:
@@ -50,7 +51,7 @@ def validate_sudoku(board: np.ndarray) -> bool:
 
 def load_string(string) -> np.ndarray:
     board = list(map(int, list(string)))
-    return np.reshape(board, (9, 9)).astype('O')
+    return np.reshape(board, (9, 9)).astype('uint8')
 
 
 def make_random_moves(board: np.ndarray, solved: np.ndarray, n_valid_moves: int, n_invalid_moves: int) -> np.ndarray:
@@ -95,83 +96,71 @@ def generate_sudokus():
             with open('data/sudoku_lists/%d_sudokus.pil' % (i + 1), 'wb') as handle:
                 pickle.dump(sudokus, handle)
 
-    with open('%d_sudokus.pil' % len(seed_list), 'wb') as handle:
+    with open('data/sudoku_lists/%d_sudokus.pil' % len(seed_list), 'wb') as handle:
         pickle.dump(sudokus, handle)
 
 
-def get_rng(rng_seed, offset=0):
-    if rng_seed is None:
-        return np.random.default_rng()
-    else:
-        return np.random.default_rng(rng_seed + offset)
-
-
-def permute_sudoku(board, rng_seed=None):
-    rng = get_rng(rng_seed)
-    permutation = rng.permutation(range(1, 10))
-    temp_board = board.copy()
+def permute_sudokus(boards: List[np.ndarray], rng: np.random.Generator) -> List[np.ndarray]:
+    permutation = rng.permutation(list(range(1, 10)))
+    permuted_boards = boards.copy()
 
     for i in range(9):
-        temp_board[board == i + 1] = permutation[i]
-    return temp_board
+        permuted_boards[boards == i+1] = permutation[i]
+    return permuted_boards
 
 
-def transpose_sudoku(board, rng_seed=None):
-    return board.transpose()
+def transpose_sudokus(boards: np.ndarray) -> np.ndarray:
+    permuted_boards = []
+    for board in boards:
+        permuted_boards.append(board.transpose())
+
+    return np.array(permuted_boards)
 
 
-def permute_rows(board, rng_seed=None):
-    temp_board = board.copy()
+def permute_rows(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    permuted_boards = boards.copy()
+
     for block in range(3):
-        rng = get_rng(rng_seed, block)
-        permutation = rng.permutation(range(3))
-
-        for i in range(3):
-            temp_board[block * 3 + i, :] = board[block * 3 + permutation[i], :]
-    return temp_board
+        permutation = rng.permutation(list(range(3)))
+        for j in range(3):
+            permuted_boards[:, block * 3 + j, :] = boards[:, block * 3 + permutation[j], :]
+    return permuted_boards
 
 
-def permute_cols(board, rng_seed=None):
-    temp_board = board.copy()
+def permute_cols(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    permuted_boards = boards.copy()
+
     for block in range(3):
-        rng = get_rng(rng_seed, block)
-        permutation = rng.permutation(range(3))
-
-        for i in range(3):
-            temp_board[:, block * 3 + i] = board[:, block * 3 + permutation[i]]
-    return temp_board
+        permutation = rng.permutation(list(range(3)))
+        for j in range(3):
+            permuted_boards[:, :, block * 3 + j] = boards[:, :, block * 3 + permutation[j]]
+    return permuted_boards
 
 
-def permute_row_blocks(board, rng_seed=None):
-    rng = get_rng(rng_seed)
-    permutation = rng.permutation(range(3))
-    temp_board = board.copy()
-
+def permute_row_blocks(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    permutation = rng.permutation(list(range(3)))
+    permuted_boards = boards.copy()
     for i in range(3):
         j = permutation[i]
-        temp_board[i * 3:(i + 1) * 3, :] = board[j * 3:(j + 1) * 3, :]
-    return temp_board
+        permuted_boards[:, i * 3:(i + 1) * 3, :] = boards[:, j * 3:(j + 1) * 3, :]
+    return np.array(permuted_boards)
 
 
-def permute_row_cols(board, rng_seed=None):
-    rng = get_rng(rng_seed)
-    permutation = rng.permutation(range(3))
-    temp_board = board.copy()
-
+def permute_row_cols(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    permutation = rng.permutation(list(range(3)))
+    permuted_boards = boards.copy()
     for i in range(3):
         j = permutation[i]
-        temp_board[i * 3:(i + 1) * 3, :] = board[j * 3:(j + 1) * 3, :]
-    return temp_board
+        permuted_boards[:, i * 3:(i + 1) * 3, :] = boards[:, j * 3:(j + 1) * 3, :]
+    return np.array(permuted_boards)
 
 
-def augment_sudoku(board, rng_seed=None):
-    rng = get_rng(rng_seed)
-
+def augment_sudokus(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     if rng.random() < 0.5:
-        board = transpose_sudoku(board)
+        boards = transpose_sudokus(boards)
 
-    augmentation_functions = [permute_sudoku, permute_rows, permute_cols, permute_row_blocks, permute_row_cols]
+    augmentation_functions = [permute_sudokus, permute_rows, permute_cols, permute_row_blocks, permute_row_cols]
     for augmentation in augmentation_functions:
-        board = augmentation(board)
+        boards = augmentation(boards, rng)
 
-    return board
+    return boards
