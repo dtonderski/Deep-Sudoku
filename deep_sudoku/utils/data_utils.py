@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, List
+from typing import Tuple, List, Callable
 from deep_sudoku.utils import sudoku_utils
 import deep_sudoku.config as cfg
 import pickle
@@ -15,17 +15,17 @@ def to_categorical(board: np.ndarray) -> np.ndarray:
 
 
 def to_numerical(board_cat: np.ndarray) -> np.ndarray:
-    board_new = np.zeros((9, 9), dtype='uint8')
+    board_num = np.zeros((9, 9), dtype='uint8')
     for i in np.argwhere(board_cat):
-        board_new[i[1], i[2]] = i[0] + 1
-    return board_new
+        board_num[i[1], i[2]] = i[0] + 1
+    return board_num
 
 
-def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2, test_fraction: float = 0.1):
+def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2, test_fraction: float = 0.1, rng_seed: int = 0):
     sudokus, start_line = sudoku_utils.load_latest_sudoku_list()
     assert (train_fraction + val_fraction + test_fraction <= 1)
     indices = list(range(len(sudokus)))
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(rng_seed)
     rng.shuffle(indices)
     val_start_index = int(len(sudokus) * train_fraction)
     test_start_index = int(len(sudokus) * (train_fraction + val_fraction))
@@ -51,7 +51,29 @@ def load_data() -> Tuple[
     return train_sudokus, val_sudokus, test_sudokus
 
 
+def uniform_possible_moves_distribution(max_possible_moves:int = 64) -> Tuple[List[int], List[int]]:
+    possible_numbers_of_moves_to_make = list(range(0,max_possible_moves))
+    probabilities = [1/max_possible_moves]*max_possible_moves
+    return possible_numbers_of_moves_to_make, probabilities
+    
+def zero_moves_distribution(max_possible_moves:int = 64) -> Tuple[List[int], List[int]]:
+    possible_numbers_of_moves_to_make = list(range(0,max_possible_moves))
+    probabilities = [0]*max_possible_moves
+    probabilities[0] = 1
+    return possible_numbers_of_moves_to_make, probabilities
 
+def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]], distribution_function: Callable = uniform_possible_moves_distribution, rng_seed: int = None) -> Tuple[np.ndarray, np.ndarray]:
+    possible_numbers_of_moves_to_make, probabilities = distribution_function()
+    n_sudokus = len(sudokus)
+    
+    rng = np.random.default_rng(rng_seed)
+    numbers_of_moves_to_make = rng.choice(possible_numbers_of_moves_to_make, size = (n_sudokus), p=probabilities)
+    
+    new_sudokus = []
+    for i, (board, solved) in enumerate(sudokus):
+        new_board = sudoku_utils.make_random_moves(board, solved, numbers_of_moves_to_make[i])
+        new_sudokus.append((new_board, solved))
+    return(new_sudokus)
 
 def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]], augment: bool = True,
                    rng_seed: int = None) -> Tuple[np.ndarray, np.ndarray]:
