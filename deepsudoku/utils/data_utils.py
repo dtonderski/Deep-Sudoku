@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple, List, Callable
-from deep_sudoku.utils import sudoku_utils
-import deep_sudoku.config as cfg
+from deepsudoku.utils import sudoku_utils
+import deepsudoku.config as cfg
 import pickle
 
 

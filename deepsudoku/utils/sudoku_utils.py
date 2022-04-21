@@ -2,7 +2,7 @@ from typing import Tuple, List, Generator
 
 import numpy as np
 from sudoku import Sudoku
-from deep_sudoku import config as cfg
+from deepsudoku import config as cfg
 import os
 import pickle
 
