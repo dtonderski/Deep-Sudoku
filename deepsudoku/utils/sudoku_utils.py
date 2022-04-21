@@ -15,7 +15,9 @@ def load_seed() -> List[str]:
 
 def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                                        int]:
-    os.makedirs(Data.config("sudoku_lists_dir"), exist_ok=True)
+    if not os.path.exists(Data.config("sudoku_lists_dir")):
+        os.makedirs(Data.config("sudoku_lists_dir"))
+        
     files = os.listdir(Data.config("sudoku_lists_dir"))
 
     if len(files) == 0:
