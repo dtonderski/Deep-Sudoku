@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(
-    name='deep-sudoku',
+    name='deepsudoku',
     version='0.1',
-    packages=['deep-sudoku', 'deep-sudoku.utils'],
-    url='https://github.com/dtonderski/Deep-Sudoku',
+    packages=['deepsudoku', 'deepsudoku.utils'],
+    url='https://github.com/dtonderski/DeepSudoku',
     license='GNU GPLv3',
     author='davton',
     author_email='dtonderski@gmail.com',
