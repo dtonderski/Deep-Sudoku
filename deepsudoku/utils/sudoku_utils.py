@@ -17,7 +17,7 @@ def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                                        int]:
     if not os.path.exists(Data.config("sudoku_lists_dir")):
         os.makedirs(Data.config("sudoku_lists_dir"))
-        
+
     files = os.listdir(Data.config("sudoku_lists_dir"))
 
     if len(files) == 0:
@@ -31,7 +31,7 @@ def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                 if int(current_line) > start_line:
                     start_line = int(current_line)
 
-        with open('data/sudoku_lists/%d_sudokus.pil' % start_line, 'rb') \
+        with open(f'{Data.config("sudoku_lists_dir")}/%d_sudokus.pil' % start_line, 'rb') \
                 as handle:
             sudokus = pickle.load(handle)
 

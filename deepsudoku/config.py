@@ -1,7 +1,7 @@
 class Data:
     __conf = {
         "seeds_path": "data/sudoku_seeds.txt",
-        "sudoku_lists_dir": "data/sudoku_lists/",
+        "sudoku_lists_dir": "data/sudoku_lists",
         "train_path": "data/train.pil",
         "val_path": "data/val.pil",
         "test_path": "data/test.pil",
