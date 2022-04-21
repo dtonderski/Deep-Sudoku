@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple, List, Callable
 from deepsudoku.utils import sudoku_utils
-import deepsudoku.config as cfg
+from deepsudoku.config import Data
 import pickle
 
 
@@ -30,13 +30,13 @@ def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
     val_start_index = int(len(sudokus) * train_fraction)
     test_start_index = int(len(sudokus) * (train_fraction + val_fraction))
 
-    with open(cfg.TRAIN_PATH, 'wb') as handle:
+    with open(Data.config("train_path"), 'wb') as handle:
         pickle.dump(sudokus[:val_start_index], handle)
 
-    with open(cfg.VAL_PATH, 'wb') as handle:
+    with open(Data.config("val_path"), 'wb') as handle:
         pickle.dump(sudokus[val_start_index:test_start_index], handle)
 
-    with open(cfg.TEST_PATH, 'wb') as handle:
+    with open(Data.config("test_path"), 'wb') as handle:
         pickle.dump(sudokus[test_start_index:], handle)
 
 
@@ -44,11 +44,11 @@ def load_data() \
         -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                  List[Tuple[np.ndarray, np.ndarray]],
                  List[Tuple[np.ndarray, np.ndarray]]]:
-    with open(cfg.TRAIN_PATH, 'rb') as handle:
+    with open(Data.config("train_path"), 'rb') as handle:
         train_sudokus = pickle.load(handle)
-    with open(cfg.VAL_PATH, 'rb') as handle:
+    with open(Data.config("val_path"), 'rb') as handle:
         val_sudokus = pickle.load(handle)
-    with open(cfg.TEST_PATH, 'rb') as handle:
+    with open(Data.config("test_path"), 'rb') as handle:
         test_sudokus = pickle.load(handle)
     return train_sudokus, val_sudokus, test_sudokus
 

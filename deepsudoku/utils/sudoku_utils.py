@@ -1,22 +1,22 @@
-from typing import Tuple, List, Generator
+from typing import Tuple, List
 
 import numpy as np
 from sudoku import Sudoku
-from deepsudoku import config as cfg
+from deepsudoku.config import Data
 import os
 import pickle
 
 
 def load_seed() -> List[str]:
-    with open(cfg.SEEDS_PATH, 'r') as f:
+    with open(Data.config("seeds_path"), 'r') as f:
         seed_list = f.read().split('\n')
     return seed_list
 
 
 def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                                        int]:
-    os.makedirs(cfg.SUDOKU_LISTS_DIR, exist_ok=True)
-    files = os.listdir(cfg.SUDOKU_LISTS_DIR)
+    os.makedirs(Data.config("sudoku_lists_dir"), exist_ok=True)
+    files = os.listdir(Data.config("sudoku_lists_dir"))
 
     if len(files) == 0:
         start_line = 0
