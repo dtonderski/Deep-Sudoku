@@ -1,6 +1,7 @@
 from deepsudoku.utils import sudoku_utils, data_utils
 import numpy as np
 
+
 def categorical_test(board: np.ndarray):
     board_cat = data_utils.to_categorical(board)
     for i in range(9):
@@ -28,7 +29,7 @@ def test_to_numerical():
         board_index = rng.choice(range(len(sudokus)))
         board, solved = sudokus[board_index]
 
-        assert(np.all(np.equal(board, data_utils.to_numerical(data_utils.to_categorical(board)))))
-        assert(np.all(np.equal(solved, data_utils.to_numerical(data_utils.to_categorical(solved)))))
-
-
+        assert(np.all(np.equal(board, data_utils.to_numerical(
+            data_utils.to_categorical(board)))))
+        assert(np.all(np.equal(solved, data_utils.to_numerical(
+            data_utils.to_categorical(solved)))))
