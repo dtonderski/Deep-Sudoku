@@ -6,14 +6,27 @@ import pickle
 
 
 def to_categorical(board: np.ndarray) -> np.ndarray:
+    """
+    Function converting a (9,9) board array to a (9,9,9) categorical array,
+    with categorical[i,j,k] == 1 iff board[j,k] == i+1
+    :param board: (9,9) board array
+    :return: (9,9,9) categorical array
+    """
     flat = board.flatten().astype('uint8')
     categorical_flat = np.eye(10)[flat]
-    categorical_channels_last = categorical_flat.reshape(9, 9, 10)[:, :, 1:]
+    categorical_channels_last = categorical_flat.reshape((9, 9, 10))[:, :, 1:]
     categorical_channels_first = np.moveaxis(categorical_channels_last, -1, 0)
     return categorical_channels_first
 
 
 def to_numerical(board_cat: np.ndarray) -> np.ndarray:
+    """
+    Function converting a (9,9,9) categorical array with channels first to a
+    (9,9) board array, where board[x,y] = categorical[c,x,y] + 1 if
+    categorical[c,x,y] != 0. Inverse of the to_categorical function.
+    :param board_cat: (9,9,9) categorical array with channels first
+    :return: (9,9) board array
+    """
     board_num = np.zeros((9, 9), dtype='uint8')
     for i in np.argwhere(board_cat):
         board_num[i[1], i[2]] = i[0] + 1
@@ -22,6 +35,16 @@ def to_numerical(board_cat: np.ndarray) -> np.ndarray:
 
 def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
                test_fraction: float = 0.1, rng_seed: int = 0):
+    """
+    Function that loads in the latest sudoku list, randomly (using rng_seed)
+    splits the sudokus into train, validation and test sets, and dumps each set
+    to the location defined in the config file.
+    :param train_fraction: fraction of sudokus to use as train data
+    :param val_fraction: fraction of sudokus to use as validation data
+    :param test_fraction: fraction of sudokus to use as test data
+    :param rng_seed: seed used for reproducible randomness.
+    :return:
+    """
     sudokus, start_line = sudoku_utils.load_latest_sudoku_list()
     assert (train_fraction + val_fraction + test_fraction <= 1)
     indices = list(range(len(sudokus)))
@@ -44,6 +67,11 @@ def load_data() \
         -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                  List[Tuple[np.ndarray, np.ndarray]],
                  List[Tuple[np.ndarray, np.ndarray]]]:
+    """
+    :return: tuple of lists of training, validation, and test sudokus. Each
+             list consists of tuples of unsolved and solved sudokus.
+
+    """
     with open(Data.config("train_path"), 'rb') as handle:
         train_sudokus = pickle.load(handle)
     with open(Data.config("val_path"), 'rb') as handle:
@@ -55,14 +83,25 @@ def load_data() \
 
 def uniform_possible_moves_distribution(max_possible_moves: int = 64) \
         -> Tuple[List[int], List[float]]:
+    """
+    Function returning a uniform distribution over possible moves
+    :param max_possible_moves: highest number of moves to make
+    :return: tuple of list of moves to make and list of probabilities for them
+    """
 
-    possible_numbers_of_moves_to_make = list(range(0, max_possible_moves))
+    possible_numbers_of_moves_to_make = list(range(max_possible_moves))
     probabilities = [1 / max_possible_moves] * max_possible_moves
     return possible_numbers_of_moves_to_make, probabilities
 
 
 def zero_moves_distribution(max_possible_moves: int = 64) \
         -> Tuple[List[int], List[int]]:
+    """
+    Function returning a distribution over possible moves with the zero element
+    having probability 1. Was used for testing, currently unused.
+    :param max_possible_moves: highest number of moves to make
+    :return: tuple of list of moves to make and list of probabilities for them
+    """
     possible_numbers_of_moves_to_make = list(range(0, max_possible_moves))
     probabilities = [0] * max_possible_moves
     probabilities[0] = 1
@@ -74,6 +113,15 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
                uniform_possible_moves_distribution,
                rng_seed: int = None) \
         -> List[Tuple[np.ndarray, np.ndarray]]:
+    """
+
+    :param sudokus: list of tuple of unsolved and solved sudokus in the form of
+                    (9,9) numpy arrays
+    :param distribution_function: function returning distribution from which
+                                  to sample move number
+    :param rng_seed: seed to generator used for reproducible randomness
+    :return: list of tuple of unsolved and solved sudokus with moves made
+    """
     possible_numbers_of_moves_to_make, probabilities = distribution_function()
     n_sudokus = len(sudokus)
 
@@ -125,11 +173,16 @@ def fast_generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]],
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Function that does the same as generate_batch, but each sudoku in the batch
-    is augmented in the same way. This way is about 25 times faster.
-    :param sudokus:
-    :param augment:
-    :param rng_seed:
-    :return:
+    is augmented in the same way. This way is about 25 times faster than
+    augmenting each sudoku individually, and since we do not experience
+    overfitting, it is not a problem
+    :param sudokus: list of tuples of unsolved and solved board pairs in the
+                    form of (9,9) arrays
+    :param augment: boolean determining whether to use augmentation in batch
+                    generation
+    :param rng_seed: seed passed to rng for reproducible randomness
+    :return: tuple of (batch_size, 9, 9) arrays, with the first and second
+             elements respectively containing unsolved and solved sudokus
     """
     x, y = [], []
     rng = np.random.default_rng(rng_seed)

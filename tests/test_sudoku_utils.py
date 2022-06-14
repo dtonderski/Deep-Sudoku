@@ -23,9 +23,12 @@ def test_random_moves():
             board_index = rng.choice(range(len(sudokus)))
             board, solved = sudokus[board_index]
 
-            new_board = sudoku_utils.make_random_moves(board, solved, n_valid_moves, n_invalid_moves)
+            new_board = sudoku_utils.make_random_moves(board, solved,
+                                                       n_valid_moves,
+                                                       n_invalid_moves)
             assert (count_invalid_moves(new_board, solved) == n_invalid_moves)
-            assert (count_valid_moves(board, new_board, solved) == n_valid_moves)
+            assert (count_valid_moves(board, new_board, solved)
+                    == n_valid_moves)
 
 
 def test_augmentation():
@@ -36,5 +39,6 @@ def test_augmentation():
         board_index = rng.choice(range(len(sudokus)))
         board, solved = sudokus[board_index]
         solved_array = np.array([solved])
-        augmented_solved_array = sudoku_utils.augment_sudokus(solved_array, rng)
+        augmented_solved_array = sudoku_utils.augment_sudokus(solved_array,
+                                                              rng)
         assert sudoku_utils.validate_sudoku(augmented_solved_array[0])

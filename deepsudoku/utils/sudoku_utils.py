@@ -8,13 +8,49 @@ import pickle
 
 
 def load_seed() -> List[str]:
+    """
+    :return: list of sudoku seeds, where each seed is a string with 81
+             characters, 17 of which are non-zero. Each one represents a
+             solvable sudoku.
+    """
     with open(Data.config("seeds_path"), 'r') as f:
         seed_list = f.read().split('\n')
     return seed_list
 
 
+def generate_sudokus():
+    """
+    Function that loads the sudoku seeds and the latest sudoku list, solves
+    sudokus starting from the last unsolved one, appends a (unsolved, solved)
+    tuple to the sudoku list, and saves it to the appropriate directory.
+    """
+    seed_list = load_seed()
+
+    sudokus, start_line = load_latest_sudoku_list()
+
+    for i, line in enumerate(seed_list[start_line:], start_line):
+        sudoku_board = load_string(line)
+        solved_board = solve_sudoku(sudoku_board)
+        print("Line %d/%d" % (i, len(seed_list)))
+        sudokus.append((sudoku_board, solved_board))
+
+        if (i % 100) == 0:
+            with open(f'{Data.config("sudoku_lists_dir")}/%d_sudokus.pil'
+                      % (i + 1), 'wb') as handle:
+                pickle.dump(sudokus, handle)
+
+    with open(f'{Data.config("sudoku_lists_dir")}/%d_sudokus.pil'
+              % len(seed_list), 'wb') as handle:
+        pickle.dump(sudokus, handle)
+
+
 def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                                        int]:
+    """
+    Function that loads the latest sudoku list and the number of solved sudokus
+    :return: tuple of (list of (tuple of solved and unsolved boards)) and
+             the number of solved sudokus
+    """
     if not os.path.exists(Data.config("sudoku_lists_dir")):
         os.makedirs(Data.config("sudoku_lists_dir"))
 
@@ -31,14 +67,18 @@ def load_latest_sudoku_list() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
                 if int(current_line) > start_line:
                     start_line = int(current_line)
 
-        with open(f'{Data.config("sudoku_lists_dir")}/%d_sudokus.pil' % start_line, 'rb') \
-                as handle:
+        with open(f'{Data.config("sudoku_lists_dir")}/%d_sudokus.pil' %
+                  start_line, 'rb') as handle:
             sudokus = pickle.load(handle)
 
     return sudokus, start_line
 
 
 def solve_sudoku(board: np.ndarray) -> np.ndarray:
+    """
+    :param board: (9,9) board, where unfilled squares are represented by zeros
+    :return: (9,9) solved board with no zero elements
+    """
     board_none = board.copy().astype('O')
     if np.any(board == 0):
         board_none[board_none == 0] = None
@@ -48,12 +88,24 @@ def solve_sudoku(board: np.ndarray) -> np.ndarray:
 
 
 def validate_sudoku(board: np.ndarray) -> bool:
+    """
+    Function that checks if sudoku has a solution, and if that solution is
+    unique.
+    :param board: (9,9) board, where unfilled squares are represented by zeros
+    :return: true if sudoku is valid, false otherwise
+    """
     puzzle = Sudoku(3)
     puzzle.board = board
     return puzzle.validate()
 
 
 def load_string(string) -> np.ndarray:
+    """
+    Function that converts a sudoku string to a (9,9) board.
+    :param string: string of length 81 representing a sudoku board, with
+                   unfilled squares being represented by zeros.
+    :return: (9,9) board array.
+    """
     board = list(map(int, list(string)))
     return np.reshape(board, (9, 9)).astype('uint8')
 
@@ -62,8 +114,13 @@ def make_random_moves(board: np.ndarray, solved: np.ndarray,
                       n_valid_moves: int, n_invalid_moves: int = 0) \
         -> np.ndarray:
     """
-    Function that takes in an unsolved and a solved board and makes
-    a number of valid and invalid moves.
+    Function that takes in an unsolved and a solved board and makes a number of
+    valid and invalid random moves.
+    :param board: (9,9) potentially unsolved sudoku board
+    :param solved: (9,9) solved sudoku board
+    :param n_valid_moves: number of valid moves to make
+    :param n_invalid_moves: number of invalid, randomly selected moves to make
+    :return: (9,9) board
     """
 
     new_board = board.copy()
@@ -91,28 +148,15 @@ def make_random_moves(board: np.ndarray, solved: np.ndarray,
     return new_board
 
 
-def generate_sudokus():
-    seed_list = load_seed()
-
-    sudokus, start_line = load_latest_sudoku_list()
-
-    for i, line in enumerate(seed_list[start_line:], start_line):
-        sudoku_board = load_string(line)
-        solved_board = solve_sudoku(sudoku_board)
-        print("Line %d/%d" % (i, len(seed_list)))
-        sudokus.append((sudoku_board, solved_board))
-
-        if (i % 100) == 0:
-            with open('data/sudoku_lists/%d_sudokus.pil' % (i + 1), 'wb') \
-                    as handle:
-                pickle.dump(sudokus, handle)
-
-    with open('data/sudoku_lists/%d_sudokus.pil' % len(seed_list), 'wb') \
-            as handle:
-        pickle.dump(sudokus, handle)
-
-
-def permute_sudokus(boards: List[np.ndarray], rng: np.random.Generator) -> List[np.ndarray]:
+def permute_sudokus(boards: np.ndarray, rng: np.random.Generator) \
+        -> List[np.ndarray]:
+    """
+    Function that permutes sudoku entries (for example, could change all 1s to
+    9s and 9s to 1s) while keeping sudoku validity. Used for augmentation
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :param rng: generator for reproducible randomness
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permutation = rng.permutation(list(range(1, 10)))
     permuted_boards = boards.copy()
 
@@ -122,6 +166,11 @@ def permute_sudokus(boards: List[np.ndarray], rng: np.random.Generator) -> List[
 
 
 def transpose_sudokus(boards: np.ndarray) -> np.ndarray:
+    """
+    Function transposing sudokus (switching rows with cols)
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permuted_boards = []
     for board in boards:
         permuted_boards.append(board.transpose())
@@ -130,8 +179,14 @@ def transpose_sudokus(boards: np.ndarray) -> np.ndarray:
 
 
 def permute_rows(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    """
+    Function that permutes the rows in a sudoku. For example, row 0 could be
+    switched with row 8
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :param rng: generator for reproducible randomness
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permuted_boards = boards.copy()
-
     for block in range(3):
         permutation = rng.permutation(list(range(3)))
         for j in range(3):
@@ -141,8 +196,14 @@ def permute_rows(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def permute_cols(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    """
+    Function that permutes the cols in a sudoku. For example, col 0 could be
+    switched with col 8
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :param rng: generator for reproducible randomness
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permuted_boards = boards.copy()
-
     for block in range(3):
         permutation = rng.permutation(list(range(3)))
         for j in range(3):
@@ -153,31 +214,54 @@ def permute_cols(boards: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 def permute_row_blocks(boards: np.ndarray, rng: np.random.Generator) \
         -> np.ndarray:
+    """
+    Function that permutes the row blocks in a sudoku. For example, rows 0-2
+    could be switched with rows 3-5
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :param rng: generator for reproducible randomness
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permutation = rng.permutation(list(range(3)))
     permuted_boards = boards.copy()
     for i in range(3):
         j = permutation[i]
-        permuted_boards[:, i * 3:(i + 1) * 3, :] = boards[:, j * 3:(j + 1) * 3, :]
+        permuted_boards[:, i * 3:(i + 1) * 3, :] = (
+            boards[:, j * 3:(j + 1) * 3, :])
     return np.array(permuted_boards)
 
 
-def permute_row_cols(boards: np.ndarray, rng: np.random.Generator) \
+def permute_col_blocks(boards: np.ndarray, rng: np.random.Generator) \
         -> np.ndarray:
+    """
+    Function that permutes the col blocks in a sudoku. For example, cols 0-2
+    could be switched with cols 3-5
+    :param boards: (batch_size, 9, 9) array with sudokus
+    :param rng: generator for reproducible randomness
+    :return: (batch_size, 9, 9) array with augmented sudokus
+    """
     permutation = rng.permutation(list(range(3)))
     permuted_boards = boards.copy()
     for i in range(3):
         j = permutation[i]
-        permuted_boards[:, i * 3:(i + 1) * 3, :] = boards[:, j * 3:(j + 1) * 3, :]
+        permuted_boards[:, :, i * 3:(i + 1) * 3] = (
+            boards[:, :, j * 3:(j + 1) * 3])
     return np.array(permuted_boards)
 
 
 def augment_sudokus(boards: np.ndarray, rng: np.random.Generator) \
         -> np.ndarray:
+    """
+    Function that applies augmentation functions. Since the transpose function
+    is deterministic, it is only applied 50% of the time.
+    :param boards: (batch_size, 9, 9) array containing sudokus
+    :param rng: numpy random generator used for reproducible randomness
+    :return: (batch_size, 9, 9) array containing augmented sudokus
+    """
     if rng.random() < 0.5:
         boards = transpose_sudokus(boards)
 
     augmentation_functions = [permute_sudokus, permute_rows, permute_cols,
-                              permute_row_blocks, permute_row_cols]
+                              permute_row_blocks, permute_col_blocks]
     for augmentation in augmentation_functions:
         boards = augmentation(boards, rng)
 

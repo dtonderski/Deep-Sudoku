@@ -1,4 +1,4 @@
-from deep_sudoku.utils import sudoku_utils, data_utils
+from deepsudoku.utils import sudoku_utils, data_utils
 import numpy as np
 
 def categorical_test(board: np.ndarray):
