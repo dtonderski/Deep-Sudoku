@@ -17,6 +17,9 @@ class SimpleNet(nn.Module):
         self.convlast = nn.Conv2d(in_channels=64, out_channels=9,
                                   kernel_size=(3, 3), stride=(1, 1),
                                   padding=1)
+        self.linhid = nn.Linear(in_features=64*9*9, out_features=64)
+        self.linlast = nn.Linear(in_features = 64, out_features = 1)
+
 
     def forward(self, x):
         x = self.conv0(x)
