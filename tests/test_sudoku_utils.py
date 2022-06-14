@@ -1,4 +1,4 @@
-from deep_sudoku.utils import sudoku_utils
+from deepsudoku.utils import sudoku_utils
 import numpy as np
 
 
