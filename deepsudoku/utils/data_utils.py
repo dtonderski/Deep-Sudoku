@@ -108,38 +108,69 @@ def zero_moves_distribution(max_possible_moves: int = 64) \
     return possible_numbers_of_moves_to_make, probabilities
 
 
+def uniform_invalid_moves_fraction_distribution(linspace_elements=30):
+    possible_invalid_move_fractions = np.linspace(0, 1, linspace_elements)
+    probabilities = [1 / linspace_elements] * linspace_elements
+    return possible_invalid_move_fractions, probabilities
+
+
 def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
-               distribution_function: Callable =
+               n_moves_distribution: Callable =
                uniform_possible_moves_distribution,
+               invalid_sudoku_probability: float = 0,
+               invalid_moves_fraction_distribution: Callable =
+               uniform_invalid_moves_fraction_distribution,
                rng_seed: int = None) \
-        -> List[Tuple[np.ndarray, np.ndarray]]:
+        -> List[Tuple[np.ndarray, np.ndarray, bool]]:
     """
+    Take in a distribution of number of moves to make, the probability of
+    making ANY invalid moves, and the distribution of fraction of moves
+    that are to be invalid, and make the moves.
+
 
     :param sudokus: list of tuple of unsolved and solved sudokus in the form of
                     (9,9) numpy arrays
-    :param distribution_function: function returning distribution from which
-                                  to sample move number
+    :param n_moves_distribution: function returning distribution from which
+                                  to sample number of moves
+    :param invalid_sudoku_probability: probability of making any invalid moves
+    :param invalid_moves_fraction_distribution: function returning distribution from which
+                                 to sample number of invalid moves
     :param rng_seed: seed to generator used for reproducible randomness
-    :return: list of tuple of unsolved and solved sudokus with moves made
+    :return: list of (tuple of (unsolved and solved sudokus with moves made and
+             bool saying if sudoku is valid))
     """
-    possible_numbers_of_moves_to_make, probabilities = distribution_function()
     n_sudokus = len(sudokus)
-
     rng = np.random.default_rng(rng_seed)
-    numbers_of_moves_to_make = rng.choice(possible_numbers_of_moves_to_make,
-                                          size=n_sudokus, p=probabilities)
+
+    possible_numbers_of_moves_to_make, probabilities = n_moves_distribution()
+    n_moves = rng.choice(possible_numbers_of_moves_to_make, size=n_sudokus,
+                         p=probabilities)
+
+    possible_invalid_move_fractions, probabilities = \
+        invalid_moves_fraction_distribution()
+
+    invalid_move_fractions = rng.choice(possible_invalid_move_fractions,
+                                        size=n_sudokus, p=probabilities)
+
+    sudoku_invalid = rng.binomial([1] * n_sudokus, invalid_sudoku_probability)
+    # make 0 invalid moves if sudoku is supposed to be valid
+    n_invalid_moves_to_make = (np.floor(invalid_move_fractions * n_moves)
+                               * sudoku_invalid).astype(int)
+    n_valid_moves_to_make = n_moves - n_invalid_moves_to_make
 
     new_sudokus = []
     for i, (board, solved) in enumerate(sudokus):
         new_board = sudoku_utils.make_random_moves(board, solved,
-                                                   numbers_of_moves_to_make[i])
-        new_sudokus.append((new_board, solved))
+                                                   n_valid_moves_to_make[i],
+                                                   n_invalid_moves_to_make[i])
+
+        new_sudokus.append((new_board, solved, not sudoku_invalid[i]))
     return new_sudokus
 
 
-def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]],
+def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
                    augment: bool = True, rng_seed: int = None) \
-        -> Tuple[np.ndarray, np.ndarray]:
+        -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function to generate batches. The main problem is this - we want
     reproducible randomness. If we are to generate batches for 100 epochs,
@@ -151,26 +182,29 @@ def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     :return:
     """
 
-    x, y = [], []
+    x, y, valid = [], [], []
     rng = np.random.default_rng(rng_seed)
 
     for i in range(len(sudokus)):
-        board, solved = sudokus[i]
+        board, solved, valid_i = sudokus[i]
         if augment:
             x_aug, y_aug = sudoku_utils.augment_sudokus(
                 np.array([board, solved]), rng)
             x.append(x_aug)
             y.append(y_aug)
+            valid.append(valid_i)
         else:
             x.append(board)
             y.append(solved)
+            valid.append(valid_i)
 
-    return np.array(x), np.array(y)
+    return np.array(x), (np.array(y), np.array(valid)[..., np.newaxis])
 
 
-def fast_generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]],
+def fast_generate_batch(sudokus:
+                        List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
                         augment: bool = True, rng_seed: int = None) \
-        -> Tuple[np.ndarray, np.ndarray]:
+        -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function that does the same as generate_batch, but each sudoku in the batch
     is augmented in the same way. This way is about 25 times faster than
@@ -181,21 +215,20 @@ def fast_generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     :param augment: boolean determining whether to use augmentation in batch
                     generation
     :param rng_seed: seed passed to rng for reproducible randomness
-    :return: tuple of (batch_size, 9, 9) arrays, with the first and second
-             elements respectively containing unsolved and solved sudokus
+    :return: tuple of a (batch_size, 9, 9) array containing unsolved sudokus 
+             and a tuple of a (batch_size, 9, 9) array with solved sudokus 
+             and a (batch_size,1) array specifying whether a sudoku is valid.
     """
-    x, y = [], []
     rng = np.random.default_rng(rng_seed)
 
-    for sudoku in sudokus:
-        x.append(sudoku[0])
-        y.append(sudoku[1])
+    x, y_board, y_valid = zip(*sudokus)
 
     if augment:
-        sudokus = x + y
+        sudokus = x + y_board
         augmented_sudokus = sudoku_utils.augment_sudokus(np.array(sudokus),
                                                          rng)
         x = augmented_sudokus[:len(augmented_sudokus) // 2]
-        y = augmented_sudokus[len(augmented_sudokus) // 2:]
+        y_board = augmented_sudokus[len(augmented_sudokus) // 2:]
+        y_valid = np.array(y_valid)[..., np.newaxis]
 
-    return x, y
+    return x, (y_board, y_valid)
