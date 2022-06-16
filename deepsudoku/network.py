@@ -1,5 +1,7 @@
 import torch
 from torch import nn
+from torch.nn import functional
+from typing import Tuple
 
 
 class ConvBlock(nn.Module):
@@ -47,25 +49,26 @@ class ValueBlock(nn.Module):
         x = torch.relu(self.bn(self.conv(x)))
         x = x.view(-1, 3 * 9 * 9)
         x = torch.relu(self.fc1(x))
-        return torch.tanh(self.fc2(x))
+        return torch.sigmoid(self.fc2(x))
 
 
 class PolicyBlock(nn.Module):
     def __init__(self):
         super(PolicyBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels=64, out_channels=9,
-                              kernel_size=(3, 3), stride=(1, 1), padding = 1)
+                              kernel_size=(3, 3), stride=(1, 1), padding=1)
 
     def forward(self, x):
         return self.conv(x)
 
 
 class Network(nn.Module):
-    def __init__(self):
+    def __init__(self, n_res_blocks = 2):
         super(Network, self).__init__()
+        self.n_res_blocks = n_res_blocks
         self.convBlock = ConvBlock()
         self.resBlockList = []
-        for i in range(5):
+        for i in range(self.n_res_blocks):
             setattr(self, f"res_{i}", ResBlock())
         self.valueBlock = ValueBlock()
         self.policyBlock = PolicyBlock()
@@ -81,8 +84,15 @@ class Network(nn.Module):
                    cell through a softmax.
         """
         x = self.convBlock(x)
-        for i in range(5):
+        for i in range(self.n_res_blocks):
             x = getattr(self, f"res_{i}")(x)
         p = self.policyBlock(x)
         v = self.valueBlock(x)
-        return v, p
+        return p, v
+
+
+def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
+            target: Tuple[torch.Tensor, torch.Tensor]):
+    p_loss = functional.cross_entropy(output[0], target[0])
+    v_loss = functional.mse_loss(output[1], target[1])
+    return p_loss + v_loss

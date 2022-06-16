@@ -125,14 +125,6 @@ def make_random_moves(board: np.ndarray, solved: np.ndarray,
 
     new_board = board.copy()
 
-    if n_valid_moves > 0:
-        possible_moves = np.argwhere(new_board == 0)
-        valid_move_indices = np.random.choice(range(len(possible_moves)),
-                                              n_valid_moves, replace=False)
-        valid_moves = possible_moves[valid_move_indices]
-        new_board[valid_moves[:, 0], valid_moves[:, 1]] = \
-            solved[valid_moves[:, 0], valid_moves[:, 1]]
-
     if n_invalid_moves > 0:
         possible_moves = np.argwhere(new_board == 0)
         invalid_move_indices = np.random.choice(range(len(possible_moves)),
@@ -144,6 +136,16 @@ def make_random_moves(board: np.ndarray, solved: np.ndarray,
         incorrect_values = np.mod(correct_values + shifting, 9)
         incorrect_values[incorrect_values == 0] = 9
         new_board[invalid_moves[:, 0], invalid_moves[:, 1]] = incorrect_values
+
+    if n_valid_moves > 0:
+        possible_moves = np.argwhere(new_board == 0)
+        n_valid_moves = max(0, min(n_valid_moves - n_invalid_moves,
+                                   len(possible_moves)))
+        valid_move_indices = np.random.choice(range(len(possible_moves)),
+                                              n_valid_moves, replace=False)
+        valid_moves = possible_moves[valid_move_indices]
+        new_board[valid_moves[:, 0], valid_moves[:, 1]] = \
+            solved[valid_moves[:, 0], valid_moves[:, 1]]
 
     return new_board
 
@@ -161,7 +163,7 @@ def permute_sudokus(boards: np.ndarray, rng: np.random.Generator) \
     permuted_boards = boards.copy()
 
     for i in range(9):
-        permuted_boards[boards == i+1] = permutation[i]
+        permuted_boards[boards == i + 1] = permutation[i]
     return permuted_boards
 
 
