@@ -107,5 +107,6 @@ def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
     :return: numerical value of the loss
     """
     p_loss = functional.cross_entropy(output[0], target[0])
-    v_loss = weight*functional.binary_cross_entropy(output[1], target[1])
+    v_loss = weight*functional.binary_cross_entropy_with_logits(output[1],
+                                                                target[1])
     return p_loss + v_loss
