@@ -63,7 +63,7 @@ class PolicyBlock(nn.Module):
 
 
 class Network(nn.Module):
-    def __init__(self, n_res_blocks = 2):
+    def __init__(self, n_res_blocks=2):
         super(Network, self).__init__()
         self.n_res_blocks = n_res_blocks
         self.convBlock = ConvBlock()
@@ -92,7 +92,8 @@ class Network(nn.Module):
 
 
 def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
-            target: Tuple[torch.Tensor, torch.Tensor]):
+            target: Tuple[torch.Tensor, torch.Tensor],
+            weight=10):
     p_loss = functional.cross_entropy(output[0], target[0])
-    v_loss = functional.mse_loss(output[1], target[1])
+    v_loss = weight * functional.mse_loss(output[1], target[1])
     return p_loss + v_loss
