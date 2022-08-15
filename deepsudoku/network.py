@@ -49,7 +49,7 @@ class ValueBlock(nn.Module):
         x = torch.relu(self.bn(self.conv(x)))
         x = x.view(-1, 3 * 9 * 9)
         x = torch.relu(self.fc1(x))
-        return torch.sigmoid(self.fc2(x))
+        return self.fc2(x)
 
 
 class PolicyBlock(nn.Module):
@@ -76,9 +76,11 @@ class Network(nn.Module):
     def forward(self, x: torch.Tensor):
         """
         
-        :param x: (batch_size,1,9,9) tensor representing the sudokus
-        :return v: (batch_size, 1) tensor representing the predicted value.
-                   Note that these are logits.
+        :param x: (batch_size,1,9,9) tensor representing the sudokus, where 0s
+                  represent empty cells
+        :return v: (batch_size, 1) tensor representing the predicted value of
+                   the sudoku, the unnormalized 'probability' that the sudoku
+                   is valid. Note that these are unnormalized logits.
         :return p: (batch_size,9,9,9) tensor representing unnormalized scores,
                    converted to a probability distribution of moves for each
                    cell through a softmax.
@@ -93,7 +95,17 @@ class Network(nn.Module):
 
 def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
             target: Tuple[torch.Tensor, torch.Tensor],
-            weight=10):
+            weight=1):
+    """
+
+    :param output: see output of Network.forward
+    :param target: tuple (p,v), where:
+        p: (batch_size, 9, 9) tensor containing the completed sudoku
+        v: (batch_size, 1) tensor, where v[i] = [1] if sudoku is valid and [0]
+           otherwise
+    :param weight: v_loss is scaled by weight
+    :return: numerical value of the loss
+    """
     p_loss = functional.cross_entropy(output[0], target[0])
-    v_loss = weight * functional.mse_loss(output[1], target[1])
+    v_loss = weight*functional.binary_cross_entropy(output[1], target[1])
     return p_loss + v_loss
