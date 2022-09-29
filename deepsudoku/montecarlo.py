@@ -147,7 +147,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 if verbose >= 3:
                     print(f"Maximum productivity: {productivity[maximum]}")
                     print(f"Sudoku updated with {maximum}")
-                if productivity[maximum] < 1e-6:
+                if productivity[maximum] < 1e-12:
                     # For debug purposes, should never happen, but it does.
                     # Trying to figure out why.
                     print(temp_sudoku)
