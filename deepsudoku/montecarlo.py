@@ -70,8 +70,8 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 leaf = True
 
                 times["PV_dict_set"].append(time.time() - start)
-
-                # print("Unseen node reached!")
+                if verbose >= 3:
+                    print("Unseen node reached!")
             else:
 
                 start = time.time()
@@ -80,19 +80,21 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 leaf = False
 
                 times["PV_dict"].append(time.time() - start)
-
-                # print("Previously seen node reached!")
+                if verbose >= 3:
+                    print("Previously seen node reached!")
 
             # End of game reached. This is needed because the end of the game
             # might have been reached before, in which case leaf would be False
             # above
             if (temp_sudoku == 0).sum() == 0:
+                print("Sudoku completed!")
                 leaf = True
 
             # If we have reached a leaf, update each (state,action) pair for
             # every traversed edge and end simulation. Otherwise, continue.
             if leaf:
-                # print("Leaf reached!")
+                if verbose >= 3:
+                    print("Leaf reached!")
                 start = time.time()
                 for state, action in edges:
                     N_dict[state][action] += 1
@@ -104,7 +106,8 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
 
                 break
             else:
-                # print("Non-leaf reached!")
+                if verbose >= 3:
+                    print("Non-leaf reached!")
                 start = time.time()
                 Q = Q_dict[temp_sudoku]
                 N = N_dict[temp_sudoku]
