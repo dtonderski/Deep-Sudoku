@@ -87,7 +87,8 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
             # might have been reached before, in which case leaf would be False
             # above
             if (temp_sudoku == 0).sum() == 0:
-                print("Sudoku completed!")
+                if verbose >= 3:
+                    print("Sudoku completed!")
                 leaf = True
 
             # If we have reached a leaf, update each (state,action) pair for
