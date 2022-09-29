@@ -26,7 +26,8 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                     warm_start=False):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
-        print("Resetting dictionaries")
+        if verbose >= 1:
+            print("Resetting dictionaries")
         N_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
         Q_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
         W_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
