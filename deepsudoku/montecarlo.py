@@ -123,6 +123,12 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 # We are only interested in nodes where temp_sudoku is 0
                 productivity = productivity * (temp_sudoku[0] == 0)
 
+                # When productivity is negative for all searched nodes, argmax
+                # would choose an already full node, as it has productivity
+                # 0 after the above line. Productivity can never go below -1.
+                # Therefore, need below to fix:
+                productivity[productivity == 0] = -1
+
                 # # Just a sanity check to convince me
                 # for i in range(9):
                 #     if temp_sudoku[0,0,0,i] != 0:
