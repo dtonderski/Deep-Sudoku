@@ -133,8 +133,8 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     :param n_moves_distribution: function returning distribution from which
                                   to sample number of moves
     :param invalid_sudoku_probability: probability of making any invalid moves
-    :param invalid_moves_fraction_distribution: function returning distribution from which
-                                 to sample number of invalid moves
+    :param invalid_moves_fraction_distribution: function returning distribution
+                                from which to sample number of invalid moves
     :param rng_seed: seed to generator used for reproducible randomness
     :return: list of (tuple of (unsolved and solved sudokus with moves made and
              bool saying if sudoku is valid))
@@ -162,7 +162,8 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     for i, (board, solved) in enumerate(sudokus):
         new_board = sudoku_utils.make_random_moves(board, solved,
                                                    n_valid_moves_to_make[i],
-                                                   n_invalid_moves_to_make[i])
+                                                   n_invalid_moves_to_make[i],
+                                                   rng_seed)
 
         new_sudokus.append((new_board, solved, not sudoku_invalid[i]))
     return new_sudokus
