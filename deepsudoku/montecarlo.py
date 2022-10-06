@@ -60,7 +60,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 times["network"].append(time.time() - start)
 
                 start = time.time()
-                v = torch.tanh(v_raw)
+                v = torch.sigmoid(v_raw)
                 p = torch.softmax(p_raw, 1)[0]
                 times["activation"].append(time.time() - start)
 
