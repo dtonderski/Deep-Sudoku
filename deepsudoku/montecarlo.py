@@ -22,7 +22,7 @@ class TensorDict(defaultdict):
 
 
 def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
-                    W_dict=None, PV_dict=None, c=1, verbose=1,
+                    W_dict=None, PV_dict=None, c=1, cutoff=0, verbose=1,
                     warm_start=False):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
@@ -115,9 +115,14 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 times["Dicts_access"].append(time.time() - start)
 
                 start = time.time()
+                # Cut off small values as otherwise we do a lot of useless
+                # exploration. Remember that we only care about finding ANY
+                # valid move, not the "best" valid move, whatever that could
+                # mean.
+                p_cutoff = p * (p > cutoff)
                 # 1e-9 is so that we choose a reasonable move in the first
-                # iteration where N.sum() is 0. Kind of ugly
-                U = c * p * (torch.sqrt(N.sum() + 1e-9) / (1 + N))
+                # iteration where N.sum() is 0. Kind of ugly.
+                U = c * p_cutoff * (torch.sqrt(N.sum() + 1e-9) / (1 + N))
                 productivity = Q + U
 
                 # We are only interested in nodes where temp_sudoku is 0
