@@ -23,7 +23,7 @@ class TensorDict(defaultdict):
 
 def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                     W_dict=None, PV_dict=None, c=1, cutoff=0, verbose=1,
-                    warm_start=False):
+                    warm_start=False, use_N_decay_term=True):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
         if verbose >= 1:
@@ -122,7 +122,9 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 p_cutoff = p * (p > cutoff)
                 # 1e-9 is so that we choose a reasonable move in the first
                 # iteration where N.sum() is 0. Kind of ugly.
-                U = c * p_cutoff * (torch.sqrt(N.sum() + 1e-9) / (1 + N))
+                U = c * p_cutoff
+                if use_N_decay_term:
+                    U = U * (torch.sqrt(N.sum() + 1e-9) / (1 + N))
                 productivity = Q + U
 
                 # We are only interested in nodes where temp_sudoku is 0
