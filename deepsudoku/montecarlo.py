@@ -29,7 +29,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
         if verbose >= 1:
             print("Resetting dictionaries")
         N_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
-        Q_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
+        Q_dict = TensorDict(lambda: (torch.zeros((9, 9, 9))+0.5).cuda())
         W_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).cuda())
         PV_dict = TensorDict()
 
