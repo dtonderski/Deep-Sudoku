@@ -25,8 +25,11 @@ class TensorDict(defaultdict):
         defaultdict.__setitem__(self, key, value)
 
 
-def get_best_move(sudoku, N_dict, solution=None, verbose=False):
-    eval_max = np.unravel_index(np.argmax(N_dict[sudoku].cpu()), (9, 9, 9))
+def get_best_move(sudoku, Q_dict, PV_dict, solution=None, verbose=False):
+    probability = Q_dict[sudoku] + PV_dict[sudoku][0]
+    probability_masked = probability * (sudoku[0] == 0)
+
+    eval_max = np.unravel_index(np.argmax(probability_masked.cpu()), (9, 9, 9))
     if verbose:
         print(eval_max)
         if solution is not None:
@@ -35,13 +38,14 @@ def get_best_move(sudoku, N_dict, solution=None, verbose=False):
     return eval_max
 
 
-def make_best_move(sudoku, N_dict, solution=None, verbose=False):
-    eval_max = get_best_move(sudoku, N_dict, solution, verbose)
+def make_best_move(sudoku, Q_dict, PV_dict, solution=None, verbose=False):
+    eval_max = get_best_move(sudoku, Q_dict, PV_dict, solution, verbose)
     sudoku[0, 0, eval_max[1], eval_max[2]] = eval_max[0] + 1
 
 
 def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
-                    W_dict=None, PV_dict=None, verbose=1, warm_start=False):
+                    W_dict=None, PV_dict=None, steps_already_made = 0,
+                    warm_start=False, verbose=1):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
         if verbose >= 1:
@@ -51,7 +55,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
         W_dict = defaultdict(float)
         PV_dict = TensorDict()
 
-    for i in range(steps):
+    for i in range(steps_already_made, steps):
         if verbose >= 1:
             print(f"Iteration {i + 1}/{steps}")
         j = -1
@@ -132,7 +136,6 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 # and update temp_sudoku. We need to clone temp_sudoku as
                 # otherwise modifying temp_sudoku will also modify the tensor
                 # in our edges list
-                start = time.time()
                 edges.append((temp_sudoku.clone(), maximum))
                 temp_sudoku[0, 0, max_row, max_col] = max_entry
 
