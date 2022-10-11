@@ -202,6 +202,7 @@ def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
     return np.array(x), (np.array(y), np.array(valid)[..., np.newaxis])
 
 
+#TODO: output type is wrong when not using augmentation
 def fast_generate_batch(sudokus:
                         List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
                         augment: bool = True, rng_seed: int = None) \
