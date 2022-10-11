@@ -38,9 +38,12 @@ def get_best_move(sudoku, Q_dict, PV_dict, solution=None, verbose=False):
     return eval_max
 
 
-def make_best_move(sudoku, Q_dict, PV_dict, solution=None, verbose=False):
+def make_best_move(sudoku, Q_dict, PV_dict, N_dict, solution=None,
+                   verbose=False):
     eval_max = get_best_move(sudoku, Q_dict, PV_dict, solution, verbose)
+    N = N_dict[tensor_action_to_dict_key((sudoku, eval_max))]
     sudoku[0, 0, eval_max[1], eval_max[2]] = eval_max[0] + 1
+    return N
 
 
 def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
