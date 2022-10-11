@@ -5,18 +5,19 @@ import torch
 import numpy as np
 
 
-def tensor_to_dict_key(tensor):
-    return tuple(tensor.flatten().tolist())
+def tensor_to_dict_key(tensor: torch.Tensor) -> int:
+    return int(''.join([str(x) for x in
+                        tensor.flatten().to(torch.uint8).tolist()]))
 
 
 class TensorDict(defaultdict):
-    def __getitem__(self, key):
+    def __getitem__(self, key: torch.Tensor):
         return defaultdict.__getitem__(self, tensor_to_dict_key(key))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key:torch.Tensor, value):
         # Need this because otherwise we call tensor_to_dict_key twice when 
         # getting a key that doesn't exist 
-        if type(key) is not tuple:
+        if type(key) is not int:
             key = tensor_to_dict_key(key)
         defaultdict.__setitem__(self, key, value)
 
