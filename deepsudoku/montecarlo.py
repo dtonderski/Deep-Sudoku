@@ -48,7 +48,7 @@ def make_best_move(sudoku, Q_dict, PV_dict, N_dict, solution=None,
 
 def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                     W_dict=None, PV_dict=None, steps_already_made = 0,
-                    warm_start=False, verbose=1):
+                    warm_start=False, verbose=1, debug = False):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
         if verbose >= 1:
@@ -99,6 +99,13 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
             if (temp_sudoku == 0).sum() == 0:
                 if verbose >= 3:
                     print("Sudoku completed!")
+                # If last node appended to edges has been played more than
+                # once, we can cancel the simulation, as it will not go
+                # anywhere
+                state, action = edges[-1]
+                if N_dict[tensor_action_to_dict_key((state, action))] > 1:
+                    if debug:
+                        print("Reached end node more than once, breaking sim!")
                 leaf = True
 
             # If we have reached a leaf, update each (state,action) pair for
@@ -139,6 +146,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 # and update temp_sudoku. We need to clone temp_sudoku as
                 # otherwise modifying temp_sudoku will also modify the tensor
                 # in our edges list
+
                 edges.append((temp_sudoku.clone(), maximum))
                 temp_sudoku[0, 0, max_row, max_col] = max_entry
 
