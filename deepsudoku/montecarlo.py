@@ -106,6 +106,7 @@ def run_simulations(sudoku, network, steps, N_dict=None, Q_dict=None,
                 if N_dict[tensor_action_to_dict_key((state, action))] > 1:
                     if debug:
                         print("Reached end node more than once, breaking sim!")
+                    return N_dict, Q_dict, W_dict, PV_dict
                 leaf = True
 
             # If we have reached a leaf, update each (state,action) pair for
