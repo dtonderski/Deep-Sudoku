@@ -49,8 +49,7 @@ def make_best_move(sudoku, Q_dict, PV_dict, N_dict, solution=None,
 def run_simulations(sudoku, network, simulations_function, N_dict=None,
                     Q_dict=None,
                     W_dict=None, PV_dict=None, steps_already_made=0,
-                    warm_start=False, use_N_dependence=False,
-                    verbose=1, debug=False):
+                    warm_start=False, verbose=1, debug=False):
     if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
             or not warm_start):
         if verbose >= 1:
@@ -107,8 +106,8 @@ def run_simulations(sudoku, network, simulations_function, N_dict=None,
                 # anywhere
                 state, action = edges[-1]
                 if N_dict[state][action] > 1:
-                    if debug:
-                        print("Reached end node more than once, breaking sim!")
+                    # if debug:
+                    print("Reached end node more than once, breaking sim!")
                     return N_dict, Q_dict, W_dict, PV_dict
                 leaf = True
 
@@ -132,15 +131,13 @@ def run_simulations(sudoku, network, simulations_function, N_dict=None,
             else:
                 if verbose >= 3:
                     print("Non-leaf reached!")
-                Q = Q_dict[temp_sudoku]
 
-                if use_N_dependence:
-                    current_zeros = n_zeros + j
-                    p_scaled = p * (1 - N_dict[temp_sudoku]
-                                    / simulations_function(current_zeros))
-                    productivity = Q + p_scaled
-                else:
-                    productivity = Q + p
+                current_zeros = n_zeros - j
+                # print(f"{n_zeros=},{j=},{current_zeros=}")
+                Q = Q_dict[temp_sudoku]
+                p_scaled = p * (1 - N_dict[temp_sudoku] / simulations_function(
+                    current_zeros))
+                productivity = Q + p_scaled
 
                 # We are only interested in nodes where temp_sudoku is 0
                 productivity = productivity * (temp_sudoku[0] == 0)
