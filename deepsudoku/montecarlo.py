@@ -106,8 +106,8 @@ def run_simulations(sudoku, network, simulations_function, N_dict=None,
                 # anywhere
                 state, action = edges[-1]
                 if N_dict[state][action] > 1:
-                    # if debug:
-                    print("Reached end node more than once, breaking sim!")
+                    if debug:
+                        print("Reached end node more than once, breaking sim!")
                     return N_dict, Q_dict, W_dict, PV_dict
                 leaf = True
 
