@@ -86,7 +86,7 @@ class PolicyBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, value_channels=10, value_hidden=64):
+    def __init__(self, value_channels=16, value_hidden=64):
         super().__init__()
         # 1, 9, 9
         self.conv1 = ConvolutionTriplet(1, 64, 9)
@@ -103,8 +103,8 @@ class UNet(nn.Module):
         # 256, 8, 8
         self.up3 = UpBlock(128, 64, 9, 1)
         # 128, 9, 9
-        self.policy = PolicyBlock(128)
-        self.value = ValueBlock(128, n_channels=value_channels,
+        self.policy = PolicyBlock(64)
+        self.value = ValueBlock(64, n_channels=value_channels,
                                 n_hidden=value_hidden)
 
     def forward(self, x):
