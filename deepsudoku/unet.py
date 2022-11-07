@@ -86,22 +86,22 @@ class PolicyBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, value_channels=3, value_hidden=64):
+    def __init__(self, value_channels=10, value_hidden=64):
         super().__init__()
         # 1, 9, 9
-        self.conv1 = ConvolutionTriplet(1, 128, 9)
+        self.conv1 = ConvolutionTriplet(1, 64, 9)
         # 128, 9, 9
-        self.down1 = DownBlock(128, 256, 8, 1)
+        self.down1 = DownBlock(64, 128, 8, 1)
         # 256, 8, 8
-        self.down2 = DownBlock(256, 512, 4, 2)
+        self.down2 = DownBlock(128, 256, 4, 2)
         # 512, 4, 4
-        self.down3 = DownBlock(512, 1024, 2, 2)
+        self.down3 = DownBlock(256, 512, 2, 2)
         # 1024, 2, 2
-        self.up1 = UpBlock(1024, 512, 4, 2)
+        self.up1 = UpBlock(512, 256, 4, 2)
         # 512, 4, 4
-        self.up2 = UpBlock(512, 256, 8, 2)
+        self.up2 = UpBlock(256, 128, 8, 2)
         # 256, 8, 8
-        self.up3 = UpBlock(256, 128, 9, 1)
+        self.up3 = UpBlock(128, 64, 9, 1)
         # 128, 9, 9
         self.policy = PolicyBlock(128)
         self.value = ValueBlock(128, n_channels=value_channels,
