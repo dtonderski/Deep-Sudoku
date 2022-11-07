@@ -12,24 +12,27 @@ class ConvolutionTriplet(nn.Module):
     def __init__(self, input_channels: int, output_channels: int,
                  resolution: int):
         super().__init__()
-        assert output_channels % 4 == 0
+        # assert output_channels % 4 == 0
 
         # Kernels should always be odd: decrease by one if image res is even
-        vh_kernel_size = resolution - (1 - resolution % 2)
+        # vh_kernel_size = resolution - (1 - resolution % 2)
 
-        self.conv_normal = nn.Conv2d(input_channels, output_channels // 2,
-                                     (3, 3), padding='same')
-        self.conv_horizontal = nn.Conv2d(input_channels, output_channels // 4,
-                                         (1, vh_kernel_size), padding='same')
-        self.conv_vertical = nn.Conv2d(input_channels, output_channels // 4,
-                                       (vh_kernel_size, 1), padding='same')
+        # self.conv_normal = nn.Conv2d(input_channels, output_channels // 2,
+        #                              (3, 3), padding='same')
+        # self.conv_horizontal = nn.Conv2d(input_channels, output_channels // 4,
+        #                                  (1, vh_kernel_size), padding='same')
+        # self.conv_vertical = nn.Conv2d(input_channels, output_channels // 4,
+        #                                (vh_kernel_size, 1), padding='same')
+        self.conv = nn.Conv2d(input_channels, output_channels, (3, 3),
+                              padding='same')
 
     def forward(self, x):
-        x1 = self.conv_normal(x)
-        x2 = self.conv_horizontal(x)
-        x3 = self.conv_vertical(x)
-
-        return torch.concat([x1, x2, x3], dim=1)
+        # x1 = self.conv_normal(x)
+        # x2 = self.conv_horizontal(x)
+        # x3 = self.conv_vertical(x)
+        #
+        # return torch.concat([x1, x2, x3], dim=1)
+        return self.conv(x)
 
 
 class ConvBlock(nn.Module):
