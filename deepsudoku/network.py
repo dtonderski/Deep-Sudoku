@@ -31,6 +31,7 @@ class ResBlock(nn.Module):
     def forward(self, x):
         skip = x
         x = self.bn1(self.conv1(x))
+        x = torch.relu(x)
         x = self.bn2(self.conv2(x))
         x += skip
         return torch.relu(x)

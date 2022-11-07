@@ -1,340 +1,152 @@
-import time
-from collections import defaultdict
-from typing import List, Tuple
-import torch
+from __future__ import annotations
+
 import numpy as np
+import torch
+from typing import Set, Tuple, List, Dict
 
 
-def tensor_action_to_dict_key(tensor_action_tuple: Tuple[torch.Tensor, Tuple]):
-    return tensor_to_dict_key(tensor_action_tuple[0]) + tensor_action_tuple[1]
+class SudokuState:
+    def __init__(self, sudoku_board: np.ndarray, network: torch.nn.Module,
+                 simulations_function: callable,
+                 parent: SudokuState = None, action_set: Set[Tuple] = None,
+                 encountered_states: List[np.ndarray] = None,
+                 transposition_table: Dict[int, SudokuState] = None):
+        """
 
+        :param sudoku_board: (..., 9, 9) numpy array, where ... can be any
+                             number of preceding ones. Values in [0, 10],
+                             where 0s represent blanks
+        :param network: pytorch module to use for predictions
+        :param simulations_function: function taking current number of blanks
+                                     and returning number of simulations to run
+        :param parent:
+        :param action_set: set of actions ((entry-1, row, col) tuples) taken
+                           to get to current state from root state
+        :param encountered_states: list of numpy arrays representing sudokus
+                                   encountered during simulation
+        :param transposition_table: dictionary mapping hash values to
+                                    SudokuStates
+        """
+        # Sudoku board should be numpy array of size (9,9), but can be
+        # (1,9,9) or (1,1,9,9), with values in [0, 9]. 0s represent blanks
+        self.sudoku_board = sudoku_board
+        self.n_zeros = (sudoku_board == 0).sum()
 
-def tensor_to_dict_key(tensor):
-    return tuple(tensor.flatten().tolist())
+        self.N = np.zeros((9, 9, 9), dtype='uint16')
+        self.W = np.zeros((9, 9, 9), dtype='float16')
+        self.Q = np.zeros((9, 9, 9), dtype='float16') + 0.5
 
+        self.network = network
+        with torch.no_grad():
+            sudoku_board_tensor = torch.tensor(sudoku_board).float().reshape(
+                (-1, 1, 9, 9)).cuda()
+            p_raw, v_raw = self.network(sudoku_board_tensor)
+            self.P = torch.softmax(p_raw, 1)[0].cpu().numpy()
+            self.V = torch.sigmoid(v_raw)[0][0].cpu().numpy()
 
-class TensorDict(defaultdict):
-    def __getitem__(self, key):
-        return defaultdict.__getitem__(self, tensor_to_dict_key(key))
+        if encountered_states is not None:
+            encountered_states.append(sudoku_board)
 
-    def __setitem__(self, key, value):
-        # Need this because otherwise we call tensor_to_dict_key twice when
-        # getting a key that doesn't exist
-        if type(key) is not tuple:
-            key = tensor_to_dict_key(key)
-        defaultdict.__setitem__(self, key, value)
+        self.last_parent = parent
+        self.parents = [parent] if parent is not None else []
+        self.leaf = True
 
+        # We need this because given a state and a parent we need to quickly
+        # compute the action required to go from parent to state, so we can
+        # update all actions leading to this state. We can't just store this,
+        # because a state can have many parents.
+        self.action_set = action_set if action_set is not None else set()
 
-def get_best_move(sudoku, Q_dict, PV_dict, solution=None, verbose=False):
-    probability = Q_dict[sudoku] + PV_dict[sudoku][0]
-    probability_masked = probability * (sudoku[0] == 0)
+        self.children = {}
 
-    eval_max = np.unravel_index(np.argmax(probability_masked.cpu()), (9, 9, 9))
-    if verbose:
-        print(eval_max)
-        if solution is not None:
-            print(solution[eval_max[1], eval_max[2]])
-            print(solution[eval_max[1], eval_max[2]] == eval_max[0])
-    return eval_max
+        self.encountered_states = encountered_states
+        self.transposition_table = (transposition_table
+                                    if transposition_table is not None
+                                    else dict())
+        self.simulations_function = simulations_function
 
+        self.hash = self.calculate_hash()
+        self.transposition_table[self.hash] = self
 
-def make_best_move(sudoku, Q_dict, PV_dict, N_dict, solution=None,
-                   verbose=False):
-    eval_max = get_best_move(sudoku, Q_dict, PV_dict, solution, verbose)
-    N = N_dict[sudoku][eval_max]
-    sudoku[0, 0, eval_max[1], eval_max[2]] = eval_max[0] + 1
-    return N
-
-
-def run_simulations(sudoku, network, simulations_function, N_dict=None,
-                    Q_dict=None,
-                    W_dict=None, PV_dict=None, steps_already_made=0,
-                    warm_start=False, verbose=1, debug=False):
-    if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
-            or not warm_start):
-        if verbose >= 1:
-            print("Resetting dictionaries")
-        N_dict = TensorDict(lambda: torch.zeros((9, 9, 9)).long().cuda())
-        Q_dict = TensorDict(lambda: (torch.zeros((9, 9, 9)) + 0.5).cuda())
-        W_dict = defaultdict(float)
-        PV_dict = TensorDict()
-    n_zeros = (sudoku == 0).sum()
-    steps = simulations_function(n_zeros)
-    for i in range(steps_already_made, steps):
-        if verbose >= 1:
-            print(f"Iteration {i + 1}/{steps}")
-        j = -1
-
-        # Empty traversed edges, clone original sudoku tensor
-        edges: List[Tuple[torch.Tensor, Tuple]] = []
-        temp_sudoku = sudoku.clone()
-
-        # Run one iteration of the simulation
-        while True:
-            j += 1
-            if verbose >= 2 and j > 1:
-                print(f"j = {j}")
-
-            # If node has been seen before, load p and v values from network.
-            # Else, run network on sudoku
-            if tensor_to_dict_key(temp_sudoku) not in PV_dict.keys():
-                p_raw, v_raw = network(temp_sudoku)
-
-                v = torch.sigmoid(v_raw)
-                p = torch.softmax(p_raw, 1)[0]
-
-                PV_dict[temp_sudoku] = (p, v)
-                leaf = True
-
-                if verbose >= 3:
-                    print("Unseen node reached!")
+    def get_child_from_action(self, action):
+        if action in self.children.keys():
+            # Child state is in children of this state
+            child = self.children[action]
+        else:
+            # We have seen the new child state before, but this
+            # state does not know that the new state is its child.
+            # We must add this relationship to the child and the parent
+            child_action_set = self.action_set.union({action})
+            child_hash = hash(tuple(child_action_set))
+            if child_hash in self.transposition_table.keys():
+                child = self.transposition_table[child_hash]
+                child.parents.append(self)
+                self.children[action] = child
             else:
-                p, v = PV_dict[temp_sudoku]
-                leaf = False
+                # We have never seen the new child state before. Create it
+                child_sudoku_board = self.sudoku_board.copy()
+                row, col = action[1], action[2]
+                entry = action[0] + 1
+                child_sudoku_board[row, col] = entry
 
-                if verbose >= 3:
-                    print("Previously seen node reached!")
+                self.leaf = False
 
-            # End of game reached. This is needed because the end of the game
-            # might have been reached before, in which case leaf would be False
-            # above
-            if (temp_sudoku == 0).sum() == 0:
-                if verbose >= 3:
-                    print("Sudoku completed!")
-                # If last node appended to edges has been played more than
-                # once, we can cancel the simulation, as it will not go
-                # anywhere
-                state, action = edges[-1]
-                if N_dict[state][action] > 1:
-                    if debug:
-                        print("Reached end node more than once, breaking sim!")
-                    return N_dict, Q_dict, W_dict, PV_dict
-                leaf = True
+                child = SudokuState(child_sudoku_board,
+                                    self.network,
+                                    self.simulations_function,
+                                    self,
+                                    self.action_set.union({action}),
+                                    self.encountered_states,
+                                    self.transposition_table)
+                self.children[action] = child
+        child.last_parent = self
+        return child
 
-            # If we have reached a leaf, update each (state,action) pair for
-            # every traversed edge and end simulation. Otherwise, continue.
-            if leaf:
-                if verbose >= 3:
-                    print("Leaf reached!")
+    def get_best_child_simulation(self):
+        p_scaled = self.P * (
+                1 - self.N / self.simulations_function(self.n_zeros))
+        productivity = self.Q + p_scaled
 
-                for state, action in edges:
-                    N_current = N_dict[state][action]
-                    N_dict[state][action] += 1
-                    W_dict[tensor_action_to_dict_key((state, action))] += (
-                        v[0][0])
+        # We are only interested in nodes where temp_sudoku is 0
+        productivity = productivity * (self.sudoku_board == 0)
 
-                    Q_dict[state][action] = (
-                            W_dict[tensor_action_to_dict_key((state, action))]
-                            / N_current)
+        # Find where productivity is maximized. Need unravel index
+        # because argmax gives a flattened index for some reason
+        maximum = np.unravel_index(np.argmax(productivity), (9, 9, 9))
 
-                break
-            else:
-                if verbose >= 3:
-                    print("Non-leaf reached!")
+        return self.get_child_from_action(maximum)
 
-                current_zeros = n_zeros - j
-                # print(f"{n_zeros=},{j=},{current_zeros=}")
-                Q = Q_dict[temp_sudoku]
-                p_scaled = p * (1 - N_dict[temp_sudoku] / simulations_function(
-                    current_zeros))
-                productivity = Q + p_scaled
+    def get_best_child_evaluation(self):
+        # When we actually make the move, don't look at the N dependence
+        probability = self.Q + self.P
 
-                # We are only interested in nodes where temp_sudoku is 0
-                productivity = productivity * (temp_sudoku[0] == 0)
+        # We are only interested in nodes where temp_sudoku is 0
+        probability = probability * (self.sudoku_board == 0)
 
-                # Find where productivity is maximized. Need unravel index
-                # because argmax gives a flattened index for some reason
-                maximum = np.unravel_index(torch.argmax(productivity).cpu(),
-                                           (9, 9, 9))
-                max_row, max_col = maximum[1], maximum[2]
-                max_entry = maximum[0] + 1
+        # Find where productivity is maximized. Need unravel index
+        # because argmax gives a flattened index for some reason
+        maximum = np.unravel_index(np.argmax(probability), (9, 9, 9))
 
-                # Append last traversed state action pair to the edges list
-                # and update temp_sudoku. We need to clone temp_sudoku as
-                # otherwise modifying temp_sudoku will also modify the tensor
-                # in our edges list
+        return self.get_child_from_action(maximum), maximum
 
-                edges.append((temp_sudoku.clone(), maximum))
-                temp_sudoku[0, 0, max_row, max_col] = max_entry
+    def update_state(self, leaf_v, leaf_action_set):
+        # Update all moves
+        coords = np.array(list(leaf_action_set - self.action_set))
+        indices, rows, cols = coords[:, 0], coords[:, 1], coords[:, 2]
 
-                if verbose >= 3:
-                    print(f"Maximum productivity: {productivity[maximum]}")
-                    print(f"Sudoku updated with {maximum}")
+        self.N[indices, rows, cols] += 1
+        self.W[indices, rows, cols] += leaf_v
 
-    return N_dict, Q_dict, W_dict, PV_dict
+        self.Q[indices, rows, cols] = (
+                self.W[indices, rows, cols] / self.N[indices, rows, cols])
 
+    def is_valid(self, solution: np.array):
+        # Solution should be 9 by 9 numpy array with values in [1,9]
+        return np.all(np.logical_or(self.sudoku_board == solution,
+                                    self.sudoku_board == 0))
 
-def run_simulations_timed(sudoku, network, steps, N_dict=None, Q_dict=None,
-                          W_dict=None, PV_dict=None, c=1, cutoff=0, verbose=1,
-                          warm_start=False, use_N_decay_term=True):
-    if ((N_dict is None or Q_dict is None or W_dict is None or PV_dict is None)
-            or not warm_start):
-        if verbose >= 1:
-            print("Resetting dictionaries")
-        N_dict = defaultdict(int)
-        Q_dict = TensorDict(lambda: (torch.zeros((9, 9, 9)) + 0.5).cuda())
-        W_dict = defaultdict(float)
-        PV_dict = TensorDict()
+    def calculate_hash(self):
+        return hash(tuple(self.action_set))
 
-    times = defaultdict(list)
-    start_time = time.time()
-    for i in range(steps):
-        start_time_iteration = time.time()
-        if verbose >= 1:
-            print(f"Iteration {i + 1}/{steps}")
-        j = -1
-
-        # Empty traversed edges, clone original sudoku tensor
-        edges: List[Tuple[torch.Tensor, Tuple]] = []
-        temp_sudoku = sudoku.clone()
-
-        # Run one iteration of the simulation
-        while True:
-
-            j += 1
-            if verbose >= 2 and j > 1:
-                print(f"j = {j}")
-
-            # If node has been seen before, load p and v values from network.
-            # Else, run network on sudoku
-            if tensor_to_dict_key(temp_sudoku) not in PV_dict.keys():
-
-                start = time.time()
-
-                p_raw, v_raw = network(temp_sudoku)
-                times["network"].append(time.time() - start)
-
-                start = time.time()
-                v = torch.sigmoid(v_raw)
-                p = torch.softmax(p_raw, 1)[0]
-                times["activation"].append(time.time() - start)
-
-                start = time.time()
-
-                PV_dict[temp_sudoku] = (p, v)
-                leaf = True
-
-                times["PV_dict_set"].append(time.time() - start)
-                if verbose >= 3:
-                    print("Unseen node reached!")
-            else:
-
-                start = time.time()
-
-                p, v = PV_dict[temp_sudoku]
-                leaf = False
-
-                times["PV_dict"].append(time.time() - start)
-                if verbose >= 3:
-                    print("Previously seen node reached!")
-
-            # End of game reached. This is needed because the end of the game
-            # might have been reached before, in which case leaf would be False
-            # above
-            if (temp_sudoku == 0).sum() == 0:
-                if verbose >= 3:
-                    print("Sudoku completed!")
-                leaf = True
-
-            # If we have reached a leaf, update each (state,action) pair for
-            # every traversed edge and end simulation. Otherwise, continue.
-            if leaf:
-                if verbose >= 3:
-                    print("Leaf reached!")
-                start = time.time()
-                for state, action in edges:
-                    N_dict[state, action] += 1
-                times["N_dict_update"].append(
-                    time.time() - start)
-                start = time.time()
-                for state, action in edges:
-                    W_dict[state, action] += v[0][0]
-                times["W_dict_update"].append(
-                    time.time() - start)
-                start = time.time()
-                for state, action in edges:
-                    Q_dict[state][action] = (
-                            W_dict[state, action]
-                            / N_dict[state, action])
-
-                times["Q_dict_update"].append(time.time() - start)
-                start = time.time()
-                for state, action in edges:
-                    N_dict[tensor_action_to_dict_key((state, action))] += 1
-                    W_dict[tensor_action_to_dict_key((state, action))] \
-                        += v[0][0]
-                    Q_dict[state][action] = (
-                            W_dict[tensor_action_to_dict_key((state, action))]
-                            / N_dict[tensor_action_to_dict_key((state,
-                                                                action))])
-
-                times["Dicts_update"].append(time.time() - start)
-
-                break
-            else:
-                if verbose >= 3:
-                    print("Non-leaf reached!")
-                start = time.time()
-                Q = Q_dict[temp_sudoku]
-                times["Dicts_access"].append(time.time() - start)
-
-                start = time.time()
-                # # Cut off small values as otherwise we do a lot of useless
-                # # exploration. Remember that we only care about finding ANY
-                # # valid move, not the "best" valid move, whatever that could
-                # # mean.
-                # p_cutoff = p * (p > cutoff)
-                # # 1e-9 is so that we choose a reasonable move in the first
-                # # iteration where N.sum() is 0. Kind of ugly.
-                # U = c * p_cutoff
-                productivity = Q + p
-
-                # We are only interested in nodes where temp_sudoku is 0
-                productivity = productivity * (temp_sudoku[0] == 0)
-
-                # # When productivity is negative for all searched nodes,
-                # # argmax would choose an already full node, as it has
-                # # productivity 0 after the above line. Productivity can never
-                # # go below -1. Therefore, need below to fix:
-                # productivity[productivity == 0] = -1
-                times["rest1"].append(time.time() - start)
-                start = time.time()
-                # # Just a sanity check to convince me
-                # for i in range(9):
-                #     if temp_sudoku[0,0,0,i] != 0:
-                #         assert sum(productivity[:,0,i] == 0)
-
-                # Find where productivity is maximized. Need unravel index
-                # because argmax gives a flattened index for some reason
-                maximum = np.unravel_index(torch.argmax(productivity).cpu(),
-                                           (9, 9, 9))
-                times["rest20"].append(time.time() - start)
-                times["rest20counter"].append(1)
-                start = time.time()
-                max_row, max_col = maximum[1], maximum[2]
-                max_entry = maximum[0] + 1
-
-                # Append last traversed state action pair to the edges list
-                # and update temp_sudoku. We need to clone temp_sudoku as
-                # otherwise modifying temp_sudoku will also modify the tensor
-                # in our edges list
-                times["rest21"].append(time.time() - start)
-                start = time.time()
-                edges.append((temp_sudoku.clone(), maximum))
-                temp_sudoku[0, 0, max_row, max_col] = max_entry
-                times["rest22"].append(time.time() - start)
-
-                # t2 = time.time()
-                if verbose >= 3:
-                    print(f"Maximum productivity: {productivity[maximum]}")
-                    print(f"Sudoku updated with {maximum}")
-
-                # Figured out below
-                # if productivity[maximum] < 1e-12:
-                #     # For debug purposes, should never happen, but it does.
-                #     # Trying to figure out why.
-                #     print(temp_sudoku)
-                #     print(productivity)
-        times['iterations'].append(time.time() - start_time_iteration)
-    times['total_time'].append(time.time() - start_time)
-    return N_dict, Q_dict, W_dict, PV_dict, times
+    def __hash__(self):
+        return self.hash
