@@ -10,7 +10,8 @@ class SudokuState:
                  simulations_function: callable,
                  parent: SudokuState = None, action_set: Set[Tuple] = None,
                  encountered_states: List[np.ndarray] = None,
-                 transposition_table: Dict[int, SudokuState] = None):
+                 transposition_table: Dict[int, SudokuState] = None,
+                 use_PUCTS = False, c_PUCTS = 1):
         """
 
         :param sudoku_board: (..., 9, 9) numpy array, where ... can be any
@@ -31,10 +32,14 @@ class SudokuState:
         # (1,9,9) or (1,1,9,9), with values in [0, 9]. 0s represent blanks
         self.sudoku_board = sudoku_board
         self.n_zeros = (sudoku_board == 0).sum()
+        self.use_PUCTS = use_PUCTS
+        self.c_PUCTS = c_PUCTS
 
         self.N = np.zeros((9, 9, 9), dtype='uint16')
         self.W = np.zeros((9, 9, 9), dtype='float16')
         self.Q = np.zeros((9, 9, 9), dtype='float16') + 0.5
+
+        self.N_sum = 0.001
 
         self.network = network
         with torch.no_grad():
@@ -97,14 +102,19 @@ class SudokuState:
                                     self,
                                     self.action_set.union({action}),
                                     self.encountered_states,
-                                    self.transposition_table)
+                                    self.transposition_table,
+                                    use_PUCTS=self.use_PUCTS,
+                                    c_PUCTS = self.c_PUCTS)
                 self.children[action] = child
         child.last_parent = self
         return child
 
     def get_best_child_simulation(self):
-        p_scaled = self.P * (
-                1 - self.N / self.simulations_function(self.n_zeros))
+        if self.use_PUCTS:
+            p_scaled = self.c_PUCTS*self.P*np.sqrt(self.N_sum)/(1+self.N)
+        else:
+            p_scaled = self.P * (
+                    1 - self.N / self.simulations_function(self.n_zeros))
         productivity = self.Q + p_scaled
 
         # We are only interested in nodes where temp_sudoku is 0
@@ -135,6 +145,7 @@ class SudokuState:
         indices, rows, cols = coords[:, 0], coords[:, 1], coords[:, 2]
 
         self.N[indices, rows, cols] += 1
+        self.N_sum += 1
         self.W[indices, rows, cols] += leaf_v
 
         self.Q[indices, rows, cols] = (

@@ -1,1 +1,1 @@
-from deepsudoku import model
+from deepsudoku.models import simple_net
