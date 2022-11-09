@@ -85,7 +85,7 @@ class ValueBlock(nn.Module):
 
     def forward(self, x):
         x = torch.relu(self.bn(self.conv(x)))
-        x = x.view(-1, self.value_channels * 9 * 9)
+        x = x.reshape(-1, self.value_channels * 9 * 9)
         x = torch.relu(self.fc1(x))
         return self.fc2(x)
 
@@ -126,7 +126,7 @@ class SeResNet(nn.Module):
 
 
 def main():
-    x = torch.zeros((25, 1, 9, 9))
+    x = torch.zeros((5120, 1, 9, 9))
     print(x.shape)
     model = SeResNet(10, 128, 32)
     x = model(x)
