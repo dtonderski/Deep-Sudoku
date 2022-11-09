@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional
 from deepsudoku.utils.network_utils import to_categorical
-
+from torchvision.ops import SqueezeExcitation
 
 class ConvBlock(nn.Module):
     def __init__(self, filters):
@@ -15,25 +15,25 @@ class ConvBlock(nn.Module):
         return torch.relu(self.bn(self.conv(x)))
 
 
-class SqueezeExcitation(nn.Module):
-    def __init__(self, filters, se_channels):
-        super().__init__()
-        self.filters = filters
-        self.squeeze = nn.AdaptiveAvgPool2d(output_size=1)
-        # Conv2d because our channels are in second dimension so Linear
-        # can't deal with it. Could do flattening and stuff
-        self.fc1 = nn.Conv2d(filters, se_channels, kernel_size=1)
-        self.fc2 = nn.Conv2d(se_channels, 2 * filters, kernel_size=1)
-
-    def forward(self, x):
-        squeezed = self.squeeze(x)
-        excited = self.fc1(squeezed)
-        excited = functional.relu(excited)
-        excited = self.fc2(excited)
-
-        weight, bias = torch.split(excited, self.filters, dim=1)
-        weight = torch.sigmoid(weight)
-        return x * weight + bias
+# class SqueezeExcitation(nn.Module):
+#     def __init__(self, filters, se_channels):
+#         super().__init__()
+#         self.filters = filters
+#         self.squeeze = nn.AdaptiveAvgPool2d(output_size=1)
+#         # Conv2d because our channels are in second dimension so Linear
+#         # can't deal with it. Could do flattening and stuff
+#         self.fc1 = nn.Conv2d(filters, se_channels, kernel_size=1)
+#         self.fc2 = nn.Conv2d(se_channels, 2 * filters, kernel_size=1)
+#
+#     def forward(self, x):
+#         squeezed = self.squeeze(x)
+#         excited = self.fc1(squeezed)
+#         excited = functional.relu(excited)
+#         excited = self.fc2(excited)
+#
+#         weight, bias = torch.split(excited, self.filters, dim=1)
+#         weight = torch.sigmoid(weight)
+#         return x * weight + bias
 
 
 class SeResBlock(nn.Module):
@@ -79,14 +79,17 @@ class ValueBlock(nn.Module):
                               out_channels=value_channels,
                               kernel_size=3, padding=1)
         self.bn = nn.BatchNorm2d(value_channels)
+        # self.dropout1 = nn.Dropout(p=0.5, inplace=True)
         self.fc1 = nn.Linear(value_channels * 9 * 9, 128)
-
+        # self.dropout2 = nn.Dropout(p=0.5, inplace=True)
         self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
         x = torch.relu(self.bn(self.conv(x)))
+        # x = self.dropout1(x)
         x = x.reshape(-1, self.value_channels * 9 * 9)
         x = torch.relu(self.fc1(x))
+        # x = self.dropout2(x)
         return self.fc2(x)
 
 
