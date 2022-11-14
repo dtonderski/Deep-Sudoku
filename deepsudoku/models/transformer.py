@@ -103,10 +103,10 @@ class Decoder(nn.Sequential):
     def forward(self, x):
         x = self.norm(x)
         p = self.policy_head(x[:, 1:])
-        p_permuted = p.permute(0,2,1)
+        p_permuted = p.permute(0, 2, 1)
 
-        p_reshaped = torch.reshape(p_permuted, (-1,9,9,9))
-        v = self.value_head(x[:, :1,0])
+        p_reshaped = torch.reshape(p_permuted, (-1, 9, 9, 9))
+        v = self.value_head(x[:, :1])[:, :, 0]
         return p_reshaped, v
 
 
