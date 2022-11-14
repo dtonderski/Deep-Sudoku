@@ -106,7 +106,7 @@ class Decoder(nn.Sequential):
         p_permuted = p.permute(0,2,1)
 
         p_reshaped = torch.reshape(p_permuted, (-1,9,9,9))
-        v = self.value_head(x[:, :1])
+        v = self.value_head(x[:, :1,0])
         return p_reshaped, v
 
 
