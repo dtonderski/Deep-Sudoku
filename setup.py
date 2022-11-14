@@ -11,5 +11,5 @@ setup(
     author_email='dtonderski@gmail.com',
     description='Solving Sudokus using a Neural '
                 'Network assisted Monte-Carlo approach.',
-    install_requires=['numpy', 'py-sudoku']
+    install_requires=['numpy', 'py-sudoku', 'einops', 'torch']
 )
