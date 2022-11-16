@@ -26,7 +26,7 @@ class MultiHeadedAttention(nn.Module):
     def __init__(self, latent_vector_size, n_heads, dropout):
         super().__init__()
         self.n_heads = n_heads
-        self.scale = latent_vector_size ** (-0.5)
+        self.scale = (latent_vector_size/n_heads) ** (-0.5)
         self.latent_vector_size = torch.tensor(latent_vector_size)
         self.qkv = nn.Linear(latent_vector_size, latent_vector_size * 3)
         self.proj = nn.Linear(latent_vector_size, latent_vector_size)
