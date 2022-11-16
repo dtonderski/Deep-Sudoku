@@ -26,6 +26,7 @@ class MultiHeadedAttention(nn.Module):
     def __init__(self, latent_vector_size, n_heads, dropout):
         super().__init__()
         self.n_heads = n_heads
+        self.scale = latent_vector_size ** (-0.5)
         self.latent_vector_size = torch.tensor(latent_vector_size)
         self.qkv = nn.Linear(latent_vector_size, latent_vector_size * 3)
         self.proj = nn.Linear(latent_vector_size, latent_vector_size)
@@ -37,20 +38,18 @@ class MultiHeadedAttention(nn.Module):
         :param x: (1, 82, latent_vector_size)
         :return:
         """
-
-        qkv = einops.rearrange(self.qkv(x),
-                               'batch patches (head_embedding heads qkv) ->'
-                               'qkv batch patches head_embedding heads',
-                               heads=self.n_heads, qkv=3)
+        # b - batches, p - patches, h - heads, d - head_embedding
+        qkv = einops.rearrange(self.qkv(x), 'b p (h d qkv) -> qkv b h p d',
+                               h=self.n_heads, qkv=3)
 
         queries, keys, values = qkv
-        transposed_keys = einops.rearrange(keys, 'b p d k -> b p k d')
+        transposed_keys = einops.rearrange(keys, 'b h p d -> b h d p')
         dot = torch.matmul(queries, transposed_keys)
-        scaled_dot = dot / torch.sqrt(self.latent_vector_size)
+        scaled_dot = dot * self.scale
         softmaxed_dot = torch.softmax(scaled_dot, dim=-1)
 
         attention = torch.matmul(softmaxed_dot, values)
-        attention = einops.rearrange(attention, 'b p d h -> b p (d h)')
+        attention = einops.rearrange(attention, 'b h p d -> b p (h d)')
 
         output = self.proj(attention)
         output = self.dropout(output)
