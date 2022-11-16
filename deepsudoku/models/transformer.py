@@ -112,7 +112,7 @@ class Decoder(nn.Sequential):
 class Transformer(nn.Module):
     def __init__(self, depth, latent_vector_size, n_heads, n_hidden, dropout):
         super().__init__()
-        self.embedding = Embedding(latent_vector_size, dropout)
+        self.embedding = Embedding(latent_vector_size)
         self.encoder = nn.Sequential(*[
             EncoderBlock(latent_vector_size, n_heads, n_hidden, dropout)
             for _ in range(depth)])
