@@ -38,7 +38,6 @@ class MultiHeadedAttention(nn.Module):
         :param x: (1, 82, latent_vector_size)
         :return:
         """
-        skip = x
         # b - batches, p - patches, h - heads, d - head_embedding
         qkv = einops.rearrange(self.qkv(x), 'b p (h d qkv) -> qkv b h p d',
                                h=self.n_heads, qkv=3)
@@ -55,7 +54,7 @@ class MultiHeadedAttention(nn.Module):
         output = self.proj(attention)
         output = self.dropout(output)
 
-        return output + skip
+        return output
 
 
 class MHABlock(nn.Module):
