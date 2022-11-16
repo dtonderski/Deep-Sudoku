@@ -6,8 +6,7 @@ from deepsudoku.utils.network_utils import to_categorical
 
 
 class Embedding(nn.Module):
-    def __init__(self, latent_vector_size, dropout, input_channels=9,
-                 patches=82):
+    def __init__(self, latent_vector_size, input_channels=9, patches=82):
         super().__init__()
         self.project = nn.Conv2d(input_channels, latent_vector_size,
                                  kernel_size=1)
