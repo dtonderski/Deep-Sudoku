@@ -2,10 +2,11 @@ import torch
 from torch import nn
 import einops
 from einops.layers.torch import Rearrange
+from deepsudoku.utils.network_utils import to_categorical
 
 
 class Embedding(nn.Module):
-    def __init__(self, latent_vector_size, dropout, input_channels=1,
+    def __init__(self, latent_vector_size, dropout, input_channels=9,
                  patches=82):
         super().__init__()
         self.project = nn.Conv2d(input_channels, latent_vector_size,
@@ -13,20 +14,19 @@ class Embedding(nn.Module):
         self.flatten = Rearrange('b c h w -> b (h w) c')
         self.cls = nn.Parameter(torch.randn(1, 1, latent_vector_size))
         self.pos = nn.Parameter(torch.randn(1, patches, latent_vector_size))
-        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         x = self.flatten(self.project(x))
         cls = einops.repeat(self.cls, '() n e -> b n e', b=x.shape[0])
         x = torch.cat([cls, x], dim=1)
-        return self.dropout(x + self.pos)
+        return x + self.pos
 
 
 class MultiHeadedAttention(nn.Module):
     def __init__(self, latent_vector_size, n_heads, dropout):
         super().__init__()
         self.n_heads = n_heads
-        self.scale = (latent_vector_size/n_heads) ** (-0.5)
+        self.scale = (latent_vector_size / n_heads) ** (-0.5)
         self.latent_vector_size = torch.tensor(latent_vector_size)
         self.qkv = nn.Linear(latent_vector_size, latent_vector_size * 3)
         self.proj = nn.Linear(latent_vector_size, latent_vector_size)
@@ -38,6 +38,7 @@ class MultiHeadedAttention(nn.Module):
         :param x: (1, 82, latent_vector_size)
         :return:
         """
+        skip = x
         # b - batches, p - patches, h - heads, d - head_embedding
         qkv = einops.rearrange(self.qkv(x), 'b p (h d qkv) -> qkv b h p d',
                                h=self.n_heads, qkv=3)
@@ -54,7 +55,7 @@ class MultiHeadedAttention(nn.Module):
         output = self.proj(attention)
         output = self.dropout(output)
 
-        return output
+        return output + skip
 
 
 class MHABlock(nn.Module):
@@ -77,7 +78,8 @@ class MLPBlock(nn.Module):
                                  nn.Linear(latent_vector_size, n_hidden),
                                  nn.GELU(),
                                  nn.Dropout(dropout),
-                                 nn.Linear(n_hidden, latent_vector_size))
+                                 nn.Linear(n_hidden, latent_vector_size),
+                                 nn.Dropout(dropout))
 
     def forward(self, x):
         skip = x
@@ -119,6 +121,9 @@ class Transformer(nn.Module):
         self.decoder = Decoder(latent_vector_size)
 
     def forward(self, x):
+        if x.shape[1] == 1:
+            # Must one-hot encode!
+            x = to_categorical(x)
         x = self.embedding(x)
         x = self.encoder(x)
         p, v = self.decoder(x)
