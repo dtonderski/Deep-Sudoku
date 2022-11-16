@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='deepsudoku',
-    version='0.5.7',
+    version='0.5.7.1',
 
     packages=find_packages(),
     url='https://github.com/dtonderski/DeepSudoku',

@@ -142,7 +142,6 @@ class ViT(nn.Module):
 
         # x = self.to_latent(x)
         x = self.head_norm(x)
-        print(x.shape)
         p = self.p_head(x[:, 1:])
         p = einops.rearrange(p, 'b (h w) c -> b c h w', h=9)
         v = self.v_head(x[:, :1])
