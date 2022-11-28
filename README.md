@@ -43,9 +43,19 @@ of the following operations:
 5. Permuting the blocks row-wise, 
 6. Permuting the blocks column-wise. 
 
-These operations allow a sudoku to be transformed in 9! x 6^8 x 2 different ways.
+These operations allow a sudoku to be transformed in $9!\cdot6^8\cdot2\approx 10^{12}$ different ways.
 
-## Loss function
+## Inputs, outputs, and loss function
+The network takes as an input a batch of sudokus $x\in\mathbb{R}^{n_{batch}\times1\times9\times9}$, transforms it into a categorical tensor $\prime{x}\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and outputs a tuple $\hat{p},\hat{v}$, where $\hat{p}\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and $\hat{v}\in\mathbb{R}^{n_{batch}\times1}$. The target is a tuple $p,v$ of the same sizes as the output.
+
 The loss function is computed as follows:
 
-$L = l_p + l_v$, where
+$L = l_p + l_v,$
+
+$l_p = \sum_{i, v_i = 1}\sum_{rc, x_{irc} > 0}\mathrm{crossentropy}(p_{irc}, \hat{p}_{irc}),$
+
+$l_v = \mathrm{binarycrossentropy}(v, \hat{v}).$
+
+In words, the loss is the sum of:
+1. $p$ loss, the crossentropy over the second dimension of $p$ and $\hat{p}$, only counting valid sudokus $(v_{i} = 1)$ and blank input cells $(x_{irc} > 0)$,
+2. $v$ loss, the binary cross entropy of $v$ and $\hat{v}$.
