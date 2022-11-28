@@ -47,3 +47,5 @@ These operations allow a sudoku to be transformed in 9! x 6^8 x 2 different ways
 
 ## Loss function
 The loss function is computed as follows:
+
+$L = l_p + l_v$, where
