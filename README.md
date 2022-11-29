@@ -13,7 +13,7 @@ leaf or terminal node is hit. Then, the value (the probability of the node being
 the result of those simulations.
 
 ## Training
-The training loop consists of two stages:
+At first, a Squeeze Excitation Resnet was trained using a loop with the following two stages:
 1. Simulation
 
     A number of valid sudokus are initialized randomly. An attempt to solve them is then run using the most
@@ -27,6 +27,16 @@ The training loop consists of two stages:
     augmented into ~10^12 other sudokus as described in the Sudoku section, and this process is computationally
     cheap. Each batch is augmented in this way - for extra efficiency, every sudoku in a specific batch is
     augmented identically.
+
+This was not done using transformers as simulations using SeResNets have significantly more sudokus/second, so
+data can be collected much quicker. After training has converged, the data from the previous 10 simulations is used
+to pre-train a ViT-Ti based transformer network. This is done until convergence, and then the above training loop
+is repeated for the transformer network.
+
+Intuitively, sudokus with more blank cells should be more difficult, and so the training data should be biased toward
+them for efficiency. To quantify this, a SeResNet was trained on sudokus where the number of empty cells was
+sampled from a uniform distribution. The p loss was then calculated as a function of empty cells. This normalized 
+quantity was used as the probability distribution of the number of empty cells for the training loop.
 
 ## Sudoku
 It [has been shown](arxiv.org/abs/1201.0749) that a sudoku has to have at least 17 clues (initially filled cells) to have a valid and unique 
