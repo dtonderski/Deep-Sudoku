@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 from torch.nn import functional
-import time
 
 
 class ResidualBlock(nn.Module):
@@ -12,6 +11,9 @@ class ConvolutionTriplet(nn.Module):
     def __init__(self, input_channels: int, output_channels: int,
                  resolution: int):
         super().__init__()
+
+        # Not currently used as below experimentation did not work
+        _ = resolution
         # assert output_channels % 4 == 0
 
         # Kernels should always be odd: decrease by one if image res is even
@@ -19,7 +21,8 @@ class ConvolutionTriplet(nn.Module):
 
         # self.conv_normal = nn.Conv2d(input_channels, output_channels // 2,
         #                              (3, 3), padding='same')
-        # self.conv_horizontal = nn.Conv2d(input_channels, output_channels // 4,
+        # self.conv_horizontal = nn.Conv2d(input_channels,
+        #                                  output_channels // 4,
         #                                  (1, vh_kernel_size), padding='same')
         # self.conv_vertical = nn.Conv2d(input_channels, output_channels // 4,
         #                                (vh_kernel_size, 1), padding='same')

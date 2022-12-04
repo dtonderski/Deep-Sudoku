@@ -76,7 +76,6 @@ class Network(nn.Module):
 
     def forward(self, x: torch.Tensor):
         """
-        
         :param x: (batch_size,1,9,9) tensor representing the sudokus, where 0s
                   represent empty cells
         :return v: (batch_size, 1) tensor representing the predicted value of

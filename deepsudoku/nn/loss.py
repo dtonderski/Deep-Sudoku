@@ -19,7 +19,8 @@ def loss(input_tensor: torch.Tensor,
                           p: (batch_size, 9, 9, 9) tensor containing the
                              estimated probability distribution over sudoku
                              moves
-                          v: (batch_size, 1) tensor, where v[i] = [1] if sudoku i is valid and [0]
+                          v: (batch_size, 1) tensor, where v[i] = [1] if sudoku
+                             i is valid and [0]
                              otherwise
     :param mask: used to mask v_loss. If None, no v_losses are masked.
     :param weight: v_loss is scaled by weight.

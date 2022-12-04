@@ -212,13 +212,13 @@ def fast_generate_batch(sudokus:
     augmenting each sudoku individually, and since we do not experience
     overfitting, it is not a problem
     :param sudokus: list of (tuples of (unsolved and solved board pairs in the
-                    form of (9,9) arrays and a boolean indicating sudoku 
+                    form of (9,9) arrays and a boolean indicating sudoku
                     validity))
     :param augment: boolean determining whether to use augmentation in batch
                     generation
     :param rng_seed: seed passed to rng for reproducible randomness
-    :return: tuple of a (batch_size, 9, 9) array containing unsolved sudokus 
-             and a tuple of a (batch_size, 9, 9) array with solved sudokus 
+    :return: tuple of a (batch_size, 9, 9) array containing unsolved sudokus
+             and a tuple of a (batch_size, 9, 9) array with solved sudokus
              and a (batch_size,1) array specifying whether a sudoku is valid.
     """
     rng = np.random.default_rng(rng_seed)
@@ -238,7 +238,3 @@ def fast_generate_batch(sudokus:
     y_valid = np.array(y_valid)[..., np.newaxis]
 
     return x, (y_board, y_valid)
-
-if __name__ == '__main__':
-    train_sudokus_raw, val_sudokus_raw, _ = load_data()
-    print(train_sudokus_raw[0])

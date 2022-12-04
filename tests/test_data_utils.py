@@ -29,7 +29,7 @@ def test_to_numerical():
         board_index = rng.choice(range(len(sudokus)))
         board, solved = sudokus[board_index]
 
-        assert(np.all(np.equal(board, data_utils.to_numerical(
+        assert (np.all(np.equal(board, data_utils.to_numerical(
             data_utils.to_categorical(board)))))
-        assert(np.all(np.equal(solved, data_utils.to_numerical(
+        assert (np.all(np.equal(solved, data_utils.to_numerical(
             data_utils.to_categorical(solved)))))
