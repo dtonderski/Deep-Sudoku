@@ -56,7 +56,7 @@ of the following operations:
 These operations allow a sudoku to be transformed in $9!\cdot6^8\cdot2\approx 10^{12}$ different ways.
 
 ## Inputs, outputs, and loss function
-The network takes as an input a batch of sudokus $x\in\mathbb{R}^{n_{batch}\times1\times9\times9}$, transforms it into a categorical tensor $\prime{x}\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and outputs a tuple $\hat{p},\hat{v}$, where $\hat{p}\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and $\hat{v}\in\mathbb{R}^{n_{batch}\times1}$. The target is a tuple $p,v$ of the same sizes as the output.
+The network takes as an input a batch of sudokus $x\in\mathbb{R}^{n_{batch}\times1\times9\times9}$, transforms it into a categorical tensor $x\prime\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and outputs a tuple $\hat{p},\hat{v}$, where $\hat{p}\in\mathbb{R}^{n_{batch}\times9\times9\times9}$, and $\hat{v}\in\mathbb{R}^{n_{batch}\times1}$. The target is a tuple $p,v$ of the same sizes as the output.
 
 The loss function is computed as follows:
 
