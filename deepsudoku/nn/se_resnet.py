@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from torch.nn import functional
 from deepsudoku.utils.network_utils import to_categorical
 from torchvision.ops import SqueezeExcitation
+
 
 class ConvBlock(nn.Module):
     def __init__(self, filters):
@@ -13,27 +13,6 @@ class ConvBlock(nn.Module):
 
     def forward(self, x):
         return torch.relu(self.bn(self.conv(x)))
-
-
-# class SqueezeExcitation(nn.Module):
-#     def __init__(self, filters, se_channels):
-#         super().__init__()
-#         self.filters = filters
-#         self.squeeze = nn.AdaptiveAvgPool2d(output_size=1)
-#         # Conv2d because our channels are in second dimension so Linear
-#         # can't deal with it. Could do flattening and stuff
-#         self.fc1 = nn.Conv2d(filters, se_channels, kernel_size=1)
-#         self.fc2 = nn.Conv2d(se_channels, 2 * filters, kernel_size=1)
-#
-#     def forward(self, x):
-#         squeezed = self.squeeze(x)
-#         excited = self.fc1(squeezed)
-#         excited = functional.relu(excited)
-#         excited = self.fc2(excited)
-#
-#         weight, bias = torch.split(excited, self.filters, dim=1)
-#         weight = torch.sigmoid(weight)
-#         return x * weight + bias
 
 
 class SeResBlock(nn.Module):
