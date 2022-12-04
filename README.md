@@ -28,15 +28,20 @@ At first, a Squeeze Excitation Resnet was trained using a loop with the followin
     cheap. Each batch is augmented in this way - for extra efficiency, every sudoku in a specific batch is
     augmented identically.
 
-This was not done using transformers as simulations using SeResNets have significantly more sudokus/second, so
-data can be collected much quicker. After training has converged, the data from the previous 10 simulations is used
-to pre-train a ViT-Ti based transformer network. This is done until convergence, and then the above training loop
-is repeated for the transformer network.
+Then, the data from the last 10 simulations is split into training, evaluation, and testing data,
+which is used to evaluate different network architectures. The best network is then fine-tuned using 
+the above training loop, but saving states from all runs, not just failed ones, as the network rarely fails
+at this point.
 
 Intuitively, sudokus with more blank cells should be more difficult, and so the training data should be biased toward
 them for efficiency. To quantify this, a SeResNet was trained on sudokus where the number of empty cells was
 sampled from a uniform distribution. The p loss was then calculated as a function of empty cells. This normalized 
 quantity was used as the probability distribution of the number of empty cells for the training loop.
+
+The initial data collection and difficulty calculation was done using a SeResNet to make sure any bias 
+tilts in favour of the SeResNet, not the transformer.
+
+
 
 ## Sudoku
 It [has been shown](arxiv.org/abs/1201.0749) that a sudoku has to have at least 17 clues (initially filled cells) to have a valid and unique 
