@@ -6,12 +6,31 @@ from typing import Set, Tuple, List, Dict
 
 
 class SudokuState:
+    sudoku_board: np.ndarray
+    network: torch.nn.Module
+    use_PUCTS: bool
+    c_PUCTS: float
+    N: np.ndarray
+    W: np.ndarray
+    Q: np.ndarray
+    N_sum: float
+    last_parent: SudokuState
+    parents: List[SudokuState]
+    leaf: bool
+    action_set: Set[Tuple[int, int, int]]
+    children: Dict[Tuple[int, int, int], SudokuState]
+    encountered_states: List[np.ndarray]
+    transposition_table: Dict[int, SudokuState]
+    simulations_function: callable
+    hash: int
+
     def __init__(self, sudoku_board: np.ndarray, network: torch.nn.Module,
                  simulations_function: callable,
-                 parent: SudokuState = None, action_set: Set[Tuple] = None,
+                 parent: SudokuState = None,
+                 action_set: Set[Tuple[int, int, int]] = None,
                  encountered_states: List[np.ndarray] = None,
                  transposition_table: Dict[int, SudokuState] = None,
-                 use_PUCTS = False, c_PUCTS = 1):
+                 use_PUCTS: bool = False, c_PUCTS: float = 1):
         """
 
         :param sudoku_board: (..., 9, 9) numpy array, where ... can be any
@@ -73,7 +92,7 @@ class SudokuState:
         self.hash = self.calculate_hash()
         self.transposition_table[self.hash] = self
 
-    def get_child_from_action(self, action):
+    def get_child_from_action(self, action: Tuple[int, int, int]):
         if action in self.children.keys():
             # Child state is in children of this state
             child = self.children[action]
@@ -104,14 +123,15 @@ class SudokuState:
                                     self.encountered_states,
                                     self.transposition_table,
                                     use_PUCTS=self.use_PUCTS,
-                                    c_PUCTS = self.c_PUCTS)
+                                    c_PUCTS=self.c_PUCTS)
                 self.children[action] = child
         child.last_parent = self
         return child
 
     def get_best_child_simulation(self):
         if self.use_PUCTS:
-            p_scaled = self.c_PUCTS*self.P*np.sqrt(self.N_sum)/(1+self.N)
+            p_scaled = (self.c_PUCTS * self.P * np.sqrt(self.N_sum)
+                        / (1 + self.N))
         else:
             p_scaled = self.P * (
                     1 - self.N / self.simulations_function(self.n_zeros))
@@ -121,10 +141,11 @@ class SudokuState:
         productivity = productivity * (self.sudoku_board == 0)
 
         # Find where productivity is maximized. Need unravel index
-        # because argmax gives a flattened index for some reason
+        # because argmax gives a flattened index
         maximum = np.unravel_index(np.argmax(productivity), (9, 9, 9))
+        best_action = (int(maximum[0]), int(maximum[1]), int(maximum[2]))
 
-        return self.get_child_from_action(maximum)
+        return self.get_child_from_action(best_action)
 
     def get_best_child_evaluation(self):
         # When we actually make the move, don't look at the N dependence
@@ -136,10 +157,11 @@ class SudokuState:
         # Find where productivity is maximized. Need unravel index
         # because argmax gives a flattened index for some reason
         maximum = np.unravel_index(np.argmax(probability), (9, 9, 9))
+        best_action = (int(maximum[0]), int(maximum[1]), int(maximum[2]))
 
-        return self.get_child_from_action(maximum), maximum
+        return self.get_child_from_action(best_action), maximum
 
-    def update_state(self, leaf_v, leaf_action_set):
+    def update_state(self, leaf_v: float, leaf_action_set):
         # Update all moves
         coords = np.array(list(leaf_action_set - self.action_set))
         indices, rows, cols = coords[:, 0], coords[:, 1], coords[:, 2]
@@ -151,13 +173,13 @@ class SudokuState:
         self.Q[indices, rows, cols] = (
                 self.W[indices, rows, cols] / self.N[indices, rows, cols])
 
-    def is_valid(self, solution: np.array):
+    def is_valid(self, solution: np.array) -> bool:
         # Solution should be 9 by 9 numpy array with values in [1,9]
         return np.all(np.logical_or(self.sudoku_board == solution,
                                     self.sudoku_board == 0))
 
-    def calculate_hash(self):
+    def calculate_hash(self) -> int:
         return hash(tuple(self.action_set))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.hash
