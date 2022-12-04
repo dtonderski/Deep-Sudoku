@@ -202,9 +202,8 @@ def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
     return np.array(x), (np.array(y), np.array(valid)[..., np.newaxis])
 
 
-#TODO: output type is wrong when not using augmentation
 def fast_generate_batch(sudokus:
-                        List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
+                        List[Tuple[np.ndarray, np.ndarray, bool]],
                         augment: bool = True, rng_seed: int = None) \
         -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
@@ -212,8 +211,9 @@ def fast_generate_batch(sudokus:
     is augmented in the same way. This way is about 25 times faster than
     augmenting each sudoku individually, and since we do not experience
     overfitting, it is not a problem
-    :param sudokus: list of tuples of unsolved and solved board pairs in the
-                    form of (9,9) arrays
+    :param sudokus: list of (tuples of (unsolved and solved board pairs in the
+                    form of (9,9) arrays and a boolean indicating sudoku 
+                    validity))
     :param augment: boolean determining whether to use augmentation in batch
                     generation
     :param rng_seed: seed passed to rng for reproducible randomness
@@ -231,6 +231,14 @@ def fast_generate_batch(sudokus:
                                                          rng)
         x = augmented_sudokus[:len(augmented_sudokus) // 2]
         y_board = augmented_sudokus[len(augmented_sudokus) // 2:]
-        y_valid = np.array(y_valid)[..., np.newaxis]
+    else:
+        x = np.stack(x)
+        y_board = np.stack(y_board)
+
+    y_valid = np.array(y_valid)[..., np.newaxis]
 
     return x, (y_board, y_valid)
+
+if __name__ == '__main__':
+    train_sudokus_raw, val_sudokus_raw, _ = load_data()
+    print(train_sudokus_raw[0])
