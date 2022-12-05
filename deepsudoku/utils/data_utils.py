@@ -96,17 +96,19 @@ def uniform_possible_moves_distribution(max_possible_moves: int = 64) \
 def difficulty_distribution():
     """
     Loads the difficulty, reverses it, discards last element, and returns as a
-    distribution. note that len(difficulty) = 65! We only care about elements
-    1:65 here.
+    distribution. note that len(difficulty) = 65, not 64. We only care about
+    elements [1,64] here, as we will not be making 64 moves (which would solve
+    the sudoku).
     :return:
     """
     difficulty = load_difficulty()
     possible_numbers_of_moves_to_make = np.array(range(0, 64))
     probabilities = np.flip(difficulty)[0:64]
+    probabilities = probabilities/probabilities.sum()
     return possible_numbers_of_moves_to_make, probabilities
 
 
-def natural_uniform_combo_distribution(uniform_scale=0.5) \
+def difficulty_uniform_combo_distribution(uniform_scale=0.5) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns a distribution that is the normalized sum of the difficulty
@@ -114,14 +116,14 @@ def natural_uniform_combo_distribution(uniform_scale=0.5) \
     :param uniform_scale:
     :return:
     """
-    natural_moves, natural_probabilities = difficulty_distribution()
+    difficulty_moves, difficulty_probabilities = difficulty_distribution()
     uniform_moves, uniform_probabilities = (
         uniform_possible_moves_distribution())
 
-    new_probabilities = (natural_probabilities + uniform_probabilities *
+    new_probabilities = (difficulty_probabilities + uniform_probabilities *
                          uniform_scale)
     new_probabilities = new_probabilities / new_probabilities.sum()
-    return natural_moves, new_probabilities
+    return difficulty_moves, new_probabilities
 
 
 def zero_moves_distribution(max_possible_moves: int = 64) \
