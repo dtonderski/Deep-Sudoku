@@ -48,5 +48,5 @@ def loss(input_tensor: torch.Tensor,
         mask = torch.ones(v_entropy.shape).to(v_entropy.device)
 
     v_entropy_masked = v_entropy * mask
-    v_loss = v_entropy_masked.sum() / mask.sum()
+    v_loss = v_entropy_masked.sum() / (mask.sum() + eps)
     return p_loss, v_loss
