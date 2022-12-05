@@ -58,9 +58,9 @@ class ValueBlock(nn.Module):
                               out_channels=value_channels,
                               kernel_size=3, padding=1)
         self.bn = nn.BatchNorm2d(value_channels)
-        self.dropout1 = nn.Dropout(p=dropout, inplace=True)
+        self.dropout1 = nn.Dropout(p=dropout)
         self.fc1 = nn.Linear(value_channels * 9 * 9, 128)
-        self.dropout2 = nn.Dropout(p=dropout, inplace=True)
+        self.dropout2 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
