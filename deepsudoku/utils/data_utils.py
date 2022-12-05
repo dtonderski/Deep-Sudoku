@@ -63,10 +63,9 @@ def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
         pickle.dump(sudokus[test_start_index:], handle)
 
 
-def load_data() \
-        -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
-                 List[Tuple[np.ndarray, np.ndarray]],
-                 List[Tuple[np.ndarray, np.ndarray]]]:
+def load_data() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
+                         List[Tuple[np.ndarray, np.ndarray]],
+                         List[Tuple[np.ndarray, np.ndarray]]]:
     """
     :return: tuple of lists of training, validation, and test sudokus. Each
              list consists of tuples of unsolved and solved sudokus.
@@ -82,36 +81,73 @@ def load_data() \
 
 
 def uniform_possible_moves_distribution(max_possible_moves: int = 64) \
-        -> Tuple[List[int], List[float]]:
+        -> Tuple[np.ndarray, np.ndarray]:
     """
     Function returning a uniform distribution over possible moves
     :param max_possible_moves: highest number of moves to make
     :return: tuple of list of moves to make and list of probabilities for them
     """
 
-    possible_numbers_of_moves_to_make = list(range(max_possible_moves))
-    probabilities = [1 / max_possible_moves] * max_possible_moves
+    possible_numbers_of_moves_to_make = np.array(range(max_possible_moves))
+    probabilities = np.ones(max_possible_moves) / max_possible_moves
     return possible_numbers_of_moves_to_make, probabilities
 
 
+def difficulty_distribution():
+    """
+    Loads the difficulty, reverses it, discards last element, and returns as a
+    distribution. note that len(difficulty) = 65! We only care about elements
+    1:65 here.
+    :return:
+    """
+    difficulty = load_difficulty()
+    possible_numbers_of_moves_to_make = np.array(range(0, 64))
+    probabilities = np.flip(difficulty)[0:64]
+    return possible_numbers_of_moves_to_make, probabilities
+
+
+def natural_uniform_combo_distribution(uniform_scale=0.5) \
+        -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns a distribution that is the normalized sum of the difficulty
+    distribution and a uniform distribution scaled by factor uniform_scale
+    :param uniform_scale:
+    :return:
+    """
+    natural_moves, natural_probabilities = difficulty_distribution()
+    uniform_moves, uniform_probabilities = (
+        uniform_possible_moves_distribution())
+
+    new_probabilities = (natural_probabilities + uniform_probabilities *
+                         uniform_scale)
+    new_probabilities = new_probabilities / new_probabilities.sum()
+    return natural_moves, new_probabilities
+
+
 def zero_moves_distribution(max_possible_moves: int = 64) \
-        -> Tuple[List[int], List[int]]:
+        -> Tuple[np.ndarray, np.ndarray]:
     """
     Function returning a distribution over possible moves with the zero element
     having probability 1. Was used for testing, currently unused.
     :param max_possible_moves: highest number of moves to make
     :return: tuple of list of moves to make and list of probabilities for them
     """
-    possible_numbers_of_moves_to_make = list(range(0, max_possible_moves))
-    probabilities = [0] * max_possible_moves
+    possible_numbers_of_moves_to_make = np.array(range(0, max_possible_moves))
+    probabilities = np.zeros(max_possible_moves)
     probabilities[0] = 1
     return possible_numbers_of_moves_to_make, probabilities
 
 
-def uniform_invalid_moves_fraction_distribution(linspace_elements=30):
+def uniform_invalid_moves_fraction_distribution(linspace_elements=30) \
+        -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Currently unused
+    :param linspace_elements:
+    :return:
+    """
     possible_invalid_move_fractions = np.linspace(0, 1, linspace_elements)
     probabilities = [1 / linspace_elements] * linspace_elements
-    return possible_invalid_move_fractions, probabilities
+    return possible_invalid_move_fractions, np.array(probabilities)
 
 
 def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
