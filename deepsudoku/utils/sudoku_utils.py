@@ -142,8 +142,7 @@ def make_random_moves(board: np.ndarray, solved: np.ndarray,
 
     if n_valid_moves > 0:
         possible_moves = np.argwhere(new_board == 0)
-        n_valid_moves = max(0, min(n_valid_moves - n_invalid_moves,
-                                   len(possible_moves)))
+        n_valid_moves = min(n_valid_moves, len(possible_moves))
         valid_move_indices = rng.choice(range(len(possible_moves)),
                                         n_valid_moves, replace=False)
         valid_moves = possible_moves[valid_move_indices]
