@@ -51,36 +51,38 @@ class PolicyBlock(nn.Module):
 
 
 class ValueBlock(nn.Module):
-    def __init__(self, filters, value_channels):
+    def __init__(self, filters, value_channels, dropout):
         super(ValueBlock, self).__init__()
         self.value_channels = value_channels
         self.conv = nn.Conv2d(in_channels=filters,
                               out_channels=value_channels,
                               kernel_size=3, padding=1)
         self.bn = nn.BatchNorm2d(value_channels)
-        # self.dropout1 = nn.Dropout(p=0.5, inplace=True)
+        self.dropout1 = nn.Dropout(p=dropout, inplace=True)
         self.fc1 = nn.Linear(value_channels * 9 * 9, 128)
-        # self.dropout2 = nn.Dropout(p=0.5, inplace=True)
+        self.dropout2 = nn.Dropout(p=dropout, inplace=True)
         self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
         x = torch.relu(self.bn(self.conv(x)))
-        # x = self.dropout1(x)
+        x = self.dropout1(x)
         x = x.reshape(-1, self.value_channels * 9 * 9)
         x = torch.relu(self.fc1(x))
-        # x = self.dropout2(x)
+        x = self.dropout2(x)
         return self.fc2(x)
 
 
 class SeResNet(nn.Module):
-    def __init__(self, blocks, filters, se_channels, value_channels=32):
+    def __init__(self, blocks, filters, se_channels, dropout=0.2,
+                 value_channels=32):
         super().__init__()
         self.blocks = blocks
         self.convBlock = ConvBlock(filters)
 
         for i in range(self.blocks):
             setattr(self, f"block_{i}", SeResBlock(filters, se_channels))
-        self.valueBlock = ValueBlock(filters, value_channels=value_channels)
+        self.valueBlock = ValueBlock(filters, value_channels=value_channels,
+                                     dropout=dropout)
         self.policyBlock = PolicyBlock(filters)
 
     def forward(self, x: torch.Tensor):
