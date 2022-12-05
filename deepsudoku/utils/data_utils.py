@@ -170,7 +170,7 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
 
 
 def generate_numpy_batch(sudokus:
-                         List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
+List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
                          augment: bool = True, rng_seed: int = None) \
         -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
@@ -204,7 +204,7 @@ def generate_numpy_batch(sudokus:
 
 
 def fast_generate_numpy_batch(sudokus:
-                              List[Tuple[np.ndarray, np.ndarray, bool]],
+List[Tuple[np.ndarray, np.ndarray, bool]],
                               augment: bool = True, rng_seed: int = None) \
         -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
@@ -239,3 +239,13 @@ def fast_generate_numpy_batch(sudokus:
     y_valid = np.array(y_valid)[..., np.newaxis]
 
     return x, (y_board, y_valid)
+
+
+def save_difficulty(difficulty: np.ndarray):
+    with open(Data.config('difficulty_path'), 'wb') as f:
+        pickle.dump(np.array(difficulty), f)
+
+
+def load_difficulty() -> np.ndarray:
+    with open(Data.config('difficulty_path'), 'rb') as f:
+        return pickle.load(f)
