@@ -169,8 +169,9 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     return new_sudokus
 
 
-def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
-                   augment: bool = True, rng_seed: int = None) \
+def generate_numpy_batch(sudokus:
+                         List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
+                         augment: bool = True, rng_seed: int = None) \
         -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function to generate batches. The main problem is this - we want
@@ -202,9 +203,9 @@ def generate_batch(sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
     return np.array(x), (np.array(y), np.array(valid)[..., np.newaxis])
 
 
-def fast_generate_batch(sudokus:
-                        List[Tuple[np.ndarray, np.ndarray, bool]],
-                        augment: bool = True, rng_seed: int = None) \
+def fast_generate_numpy_batch(sudokus:
+                              List[Tuple[np.ndarray, np.ndarray, bool]],
+                              augment: bool = True, rng_seed: int = None) \
         -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function that does the same as generate_batch, but each sudoku in the batch
