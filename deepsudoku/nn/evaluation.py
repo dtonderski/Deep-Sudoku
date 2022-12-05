@@ -7,3 +7,7 @@ def categorical_accuracy(x: torch.Tensor, y: torch.Tensor,
     return torch.logical_and(
         torch.eq(y_pred[0].argmax(dim=1), y[0]), mask[:, 0]
     ).sum() / mask.sum()
+
+
+def binary_accuracy(y: torch.Tensor, y_pred: torch.Tensor):
+    return ((y_pred[1] > 0) == y[1]).sum() / len(y[1])
