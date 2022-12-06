@@ -9,11 +9,11 @@ import numpy as np
 
 
 def categorical_accuracy(x: torch.Tensor, y: torch.Tensor,
-                         y_pred: torch.Tensor) -> torch.Tensor:
+                         y_pred: torch.Tensor, eps = 1e-5) -> torch.Tensor:
     mask = y[1][:, :, None, None] * (x == 0)
     return torch.logical_and(
         torch.eq(y_pred[0].argmax(dim=1), y[0]), mask[:, 0]
-    ).sum() / mask.sum()
+    ).sum() / (mask.sum() + eps)
 
 
 def binary_accuracy(y: torch.Tensor, y_pred: torch.Tensor):
