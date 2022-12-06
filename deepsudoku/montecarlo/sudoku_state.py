@@ -68,27 +68,27 @@ class SudokuState:
             self.P = torch.softmax(p_raw, 1)[0].cpu().numpy()
             self.V = torch.sigmoid(v_raw)[0][0].cpu().numpy()
 
-        if encountered_states is not None:
-            encountered_states.append(sudoku_board)
-
         self.last_parent = parent
         self.parents = [parent] if parent is not None else []
         self.leaf = True
+
+        self.simulations_function = simulations_function
 
         # We need this because given a state and a parent we need to quickly
         # compute the action required to go from parent to state, so we can
         # update all actions leading to this state. We can't just store this,
         # because a state can have many parents.
         self.action_set = action_set if action_set is not None else set()
-
         self.children = {}
 
-        self.encountered_states = encountered_states
+        self.encountered_states = (encountered_states
+                                   if encountered_states is not None
+                                   else [])
+        encountered_states.append(sudoku_board)
+
         self.transposition_table = (transposition_table
                                     if transposition_table is not None
                                     else dict())
-        self.simulations_function = simulations_function
-
         self.hash = self.calculate_hash()
         self.transposition_table[self.hash] = self
 

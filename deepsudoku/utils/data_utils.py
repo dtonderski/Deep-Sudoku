@@ -285,5 +285,10 @@ def save_difficulty(difficulty: np.ndarray):
 
 
 def load_difficulty() -> np.ndarray:
+    """
+
+    :return: difficulty of sudoku as a function of number_of_zeros, where
+             difficulty = 1 for sudokus with 64 empty cells
+    """
     with open(Data.config('difficulty_path'), 'rb') as f:
         return pickle.load(f)
