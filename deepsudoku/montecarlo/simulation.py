@@ -1,9 +1,14 @@
 import numpy as np
 from deepsudoku.montecarlo.sudoku_state import SudokuState
+from deepsudoku.utils.data_utils import load_difficulty
 from typing import Tuple
 
+
 def get_n_simulations_function(min_simulations: int, max_simulations: int,
-                               difficulty: np.ndarray) -> callable:
+                               difficulty: np.ndarray = None) -> callable:
+    if difficulty is None:
+        difficulty = load_difficulty()
+
     def n_simulations_function(n_zeros: int) -> int:
         n_simulations = int(max(difficulty[int(n_zeros)] * max_simulations,
                                 min_simulations))

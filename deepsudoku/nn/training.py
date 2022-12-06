@@ -13,14 +13,14 @@ import numpy as np
 def generate_training_data(train_sudokus:
                            List[Tuple[np.ndarray, np.ndarray, bool]],
                            network: torch.nn.Module,
-                           simulations_function: callable,
+                           n_simulations_function: callable,
                            min_data_size: int = 4096,
                            verbose: int = 0):
     """
 
     :param train_sudokus: list of tuples (sudoku, solution, valid)
     :param network:
-    :param simulations_function: 
+    :param n_simulations_function: 
     :param min_data_size: minimum data size to save
     :param verbose: 0,1, or 2
     :return: list of tuples of (sudoku, solution, valid) containing states 
@@ -43,11 +43,11 @@ def generate_training_data(train_sudokus:
         sudoku_board, solution, _ = sudoku_package
 
         root = SudokuState(sudoku_board, network,
-                           simulations_function=simulations_function,
+                           simulations_function=n_simulations_function,
                            use_PUCTS=True)
 
         node, successful_game = play_sudoku_until_failure(root, solution,
-                                                          simulations_function)
+                                                          n_simulations_function)
 
         if not successful_game:
             sudokus_sampled_from += 1
