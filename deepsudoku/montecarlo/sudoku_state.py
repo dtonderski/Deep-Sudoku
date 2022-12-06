@@ -84,7 +84,8 @@ class SudokuState:
         self.encountered_states = (encountered_states
                                    if encountered_states is not None
                                    else [])
-        encountered_states.append(sudoku_board)
+
+        self.encountered_states.append(sudoku_board)
 
         self.transposition_table = (transposition_table
                                     if transposition_table is not None
