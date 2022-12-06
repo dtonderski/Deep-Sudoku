@@ -83,10 +83,13 @@ def print_evaluation(avg_moves_dict: Dict[int, float],
 def evaluate_and_print(val_sudokus: List[Tuple[np.ndarray, np.ndarray, bool]],
                        network: torch.nn.Module,
                        n_simulations_function: callable,
+                       use_PUCTS: bool = False,
+                       n_played_sudokus: int = 128,
+                       print_every_n: int = 16,
                        verbose: bool = True) -> None:
     moves_before_failure_dict, percentage_completed_dict = (
         evaluate(val_sudokus, network, n_simulations_function,
-                 verbose=verbose))
+                 use_PUCTS, n_played_sudokus, print_every_n, verbose))
 
     avg_moves_dict, avg_percentage_dict = get_averages(
         moves_before_failure_dict, percentage_completed_dict)
