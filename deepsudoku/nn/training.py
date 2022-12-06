@@ -14,13 +14,16 @@ def generate_training_data(train_sudokus:
                            List[Tuple[np.ndarray, np.ndarray, bool]],
                            network: torch.nn.Module,
                            n_simulations_function: callable,
+                           use_PUCTS: bool = False,
                            min_data_size: int = 4096,
-                           verbose: int = 0):
+                           verbose: int = 0) \
+        -> List[Tuple[np.ndarray, np.ndarray, bool]]:
     """
 
     :param train_sudokus: list of tuples (sudoku, solution, valid)
     :param network:
     :param n_simulations_function: 
+    :param use_PUCTS: 
     :param min_data_size: minimum data size to save
     :param verbose: 0,1, or 2
     :return: list of tuples of (sudoku, solution, valid) containing states 
@@ -44,10 +47,10 @@ def generate_training_data(train_sudokus:
 
         root = SudokuState(sudoku_board, network,
                            simulations_function=n_simulations_function,
-                           use_PUCTS=True)
+                           use_PUCTS=use_PUCTS)
 
-        node, successful_game = play_sudoku_until_failure(root, solution,
-                                                          n_simulations_function)
+        node, successful_game = play_sudoku_until_failure(
+            root, solution, n_simulations_function)
 
         if not successful_game:
             sudokus_sampled_from += 1
@@ -80,7 +83,7 @@ def generate_training_data(train_sudokus:
     if not saved_states:
         print("============= ALL SUDOKUS SOLVED SUCCESSFULLY! =============")
         print("This will cause code to break.")
-        return
+        return saved_states
 
     if verbose:
         print(f"Valids fraction: {sum(valids) / len(valids):.2f}, "

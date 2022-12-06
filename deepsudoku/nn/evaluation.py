@@ -24,6 +24,7 @@ def evaluate(
         val_sudokus: List[Tuple[np.ndarray, np.ndarray, bool]],
         network: torch.nn.Module,
         n_simulations_function: callable,
+        use_PUCTS: bool = False,
         n_played_sudokus: int = 128,
         print_every_n: int = 16,
         verbose: bool = True):
@@ -38,7 +39,7 @@ def evaluate(
 
         root = SudokuState(sudoku_board, network,
                            simulations_function=n_simulations_function,
-                           use_PUCTS=True)
+                           use_PUCTS=use_PUCTS)
 
         node, successful_game = play_sudoku_until_failure(
             root, solution, n_simulations_function)
