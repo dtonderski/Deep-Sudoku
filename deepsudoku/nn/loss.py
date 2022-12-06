@@ -48,8 +48,10 @@ def loss(input_tensor: torch.Tensor,
 
     p_entropy_masked = p_mask * p_entropy
 
-    p_loss = (p_entropy_masked.sum(dim=(-1, -2)) / (
-            p_mask.sum(dim=(-1, -2)) + eps)).mean()
+    p_loss_sudoku_wise = (p_entropy_masked.sum(dim=(-1, -2))
+                          / (p_mask.sum(dim=(-1, -2)) + eps))
+
+    p_loss = p_loss_sudoku_wise.sum() / p_invalid_mask.sum()
 
     v_entropy = weight * functional.binary_cross_entropy_with_logits(
         output_tuple[1], target_tuple[1], binary_cross_entropy_weights,
