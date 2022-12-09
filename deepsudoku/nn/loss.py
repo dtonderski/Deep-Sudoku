@@ -3,11 +3,12 @@ import torch.nn.functional as functional
 from typing import Tuple
 
 
-def get_binary_cross_entropy_weights(v_target):
+def get_binary_cross_entropy_weights(v_target, eps = 1e-5):
     n_valid = v_target.sum()
     n_invalid = v_target.shape[0] - n_valid
-    weights = (v_target * (n_valid + n_invalid) / (2 * n_valid)
-               + (1 - v_target) * (n_valid + n_invalid) / (2 * n_invalid))
+    weights = (v_target * (n_valid + n_invalid) / (2 * n_valid + eps)
+               +
+               (1 - v_target) * (n_valid + n_invalid) / (2 * n_invalid + eps))
     return weights
 
 
