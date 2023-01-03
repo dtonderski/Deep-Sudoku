@@ -55,3 +55,12 @@ def play_sudoku_until_failure(node: SudokuState, solution: np.ndarray,
             break
 
     return node, successful_game
+
+
+def play_sudoku(node: SudokuState, n_simulations_function: callable) -> SudokuState:
+
+    while node.n_zeros > 0:
+        run_simulations(node, n_simulations_function)
+        node, move = node.get_best_child_evaluation()
+
+    return node

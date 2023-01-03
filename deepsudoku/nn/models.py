@@ -12,8 +12,8 @@ models = {
 def load_model(model_name: Literal["SeResNet", "ViTTiTransformer", "ViTTiSudoker"],
                device: Literal["cuda", "cpu"] = "cuda",
                checkpoint_path: str = None):
-    network = models[model_name]().to(device)
+    model = models[model_name]().to(device)
     if checkpoint_path is not None:
         checkpoint = torch.load(checkpoint_path)
-        network.load_state_dict(checkpoint['model_state_dict'])
-    return network
+        model.load_state_dict(checkpoint['model_state_dict'])
+    return model
