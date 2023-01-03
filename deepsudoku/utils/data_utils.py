@@ -292,7 +292,7 @@ def load_difficulty(use_builtin_difficulty=True) -> np.ndarray:
              difficulty = 1 for sudokus with 64 empty cells
     """
     if use_builtin_difficulty:
-        difficulty = importlib.resources.read_binary("deepsudoku/resources", "difficulty.pkl")
+        difficulty = importlib.resources.read_binary("deepsudoku.resources", "difficulty.pkl")
         return pickle.loads(difficulty)
     else:
         with open(Data.config('difficulty_path'), 'rb') as f:
