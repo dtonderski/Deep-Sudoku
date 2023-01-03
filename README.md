@@ -1,6 +1,7 @@
 # DeepSudoku
 A sudoku solving package using Monte Carlo Graph Search and AI. Inspired by the AlphaZero paper
 "[Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)".
+For a demonstration, see the Solving Sudokus notebook or go to
 
 ## Algorithm
 Sudokus are solved by using Monte Carlo Graph Search with our predictor being a neural network estimator. There are
