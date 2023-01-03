@@ -3,8 +3,10 @@ from setuptools import setup, find_packages
 setup(
     name='deepsudoku',
     version='0.9.4',
-
     packages=find_packages(),
+    package_data={
+        'deepsudoku.resources': ['*.pkl', '*.pth'],
+    },
     url='https://github.com/dtonderski/DeepSudoku',
     license='GNU GPLv3',
     author='davton',
