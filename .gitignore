@@ -160,3 +160,9 @@ documentation/models
 
 # Excel autosaves
 *~$*.xlsx
+
+# Models
+models/difficulty
+models/finetuning
+models/initial
+models/training
