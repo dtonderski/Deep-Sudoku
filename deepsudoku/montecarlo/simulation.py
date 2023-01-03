@@ -5,9 +5,10 @@ from typing import Tuple
 
 
 def get_n_simulations_function(min_simulations: int, max_simulations: int,
-                               difficulty: np.ndarray = None) -> callable:
+                               difficulty: np.ndarray = None,
+                               use_builtin_difficulty=True) -> callable:
     if difficulty is None:
-        difficulty = load_difficulty()
+        difficulty = load_difficulty(use_builtin_difficulty=use_builtin_difficulty)
 
     def n_simulations_function(n_zeros: int) -> int:
         n_simulations = int(max(difficulty[int(n_zeros)] * max_simulations,
@@ -58,7 +59,6 @@ def play_sudoku_until_failure(node: SudokuState, solution: np.ndarray,
 
 
 def play_sudoku(node: SudokuState, n_simulations_function: callable) -> SudokuState:
-
     while node.n_zeros > 0:
         run_simulations(node, n_simulations_function)
         node, move = node.get_best_child_evaluation()

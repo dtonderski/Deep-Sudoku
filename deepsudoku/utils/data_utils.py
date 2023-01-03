@@ -3,6 +3,7 @@ from typing import Tuple, List, Callable
 from deepsudoku.utils import sudoku_utils
 from deepsudoku.config import Data
 import pickle
+import importlib.resources
 
 
 def to_categorical(board: np.ndarray) -> np.ndarray:
@@ -64,8 +65,8 @@ def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
 
 
 def load_data() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
-                         List[Tuple[np.ndarray, np.ndarray]],
-                         List[Tuple[np.ndarray, np.ndarray]]]:
+List[Tuple[np.ndarray, np.ndarray]],
+List[Tuple[np.ndarray, np.ndarray]]]:
     """
     :return: tuple of lists of training, validation, and test sudokus. Each
              list consists of tuples of unsolved and solved sudokus.
@@ -104,7 +105,7 @@ def difficulty_distribution():
     difficulty = load_difficulty()
     possible_numbers_of_moves_to_make = np.array(range(0, 64))
     probabilities = np.flip(difficulty)[0:64]
-    probabilities = probabilities/probabilities.sum()
+    probabilities = probabilities / probabilities.sum()
     return possible_numbers_of_moves_to_make, probabilities
 
 
@@ -284,11 +285,15 @@ def save_difficulty(difficulty: np.ndarray):
         pickle.dump(np.array(difficulty), f)
 
 
-def load_difficulty() -> np.ndarray:
+def load_difficulty(use_builtin_difficulty=True) -> np.ndarray:
     """
 
     :return: difficulty of sudoku as a function of number_of_zeros, where
              difficulty = 1 for sudokus with 64 empty cells
     """
-    with open(Data.config('difficulty_path'), 'rb') as f:
-        return pickle.load(f)
+    if use_builtin_difficulty:
+        difficulty = importlib.resources.read_binary("deepsudoku/resources", "difficulty.pkl")
+        return pickle.loads(difficulty)
+    else:
+        with open(Data.config('difficulty_path'), 'rb') as f:
+            return pickle.load(f)
