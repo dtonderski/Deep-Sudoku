@@ -89,14 +89,24 @@ def solve_sudoku(board: np.ndarray) -> np.ndarray:
 
 def validate_sudoku(board: np.ndarray) -> bool:
     """
-    Function that checks if sudoku has a solution, and if that solution is
-    unique.
+    Return false if there are duplicate entries in any row/block/col.
     :param board: (9,9) board, where unfilled squares are represented by zeros
     :return: true if sudoku is valid, false otherwise
     """
-    puzzle = Sudoku(3)
-    puzzle.board = board
-    return puzzle.validate()
+
+    row_numbers, col_numbers, box_numbers = np.zeros((9, 9)), np.zeros((9, 9)), np.zeros((3, 3, 9))
+
+    row_i, col_i = np.where(board)
+
+    for i, j in zip(row_i, col_i):
+        row_numbers[i, board[i, j] - 1] += 1
+        col_numbers[j, board[i, j] - 1] += 1
+        box_numbers[i // 3, j // 3, board[i, j] - 1] += 1
+
+    if np.any(row_numbers > 1) or np.any(col_numbers > 1) or np.any(box_numbers > 1):
+        return False
+
+    return True
 
 
 def load_string(string) -> np.ndarray:
