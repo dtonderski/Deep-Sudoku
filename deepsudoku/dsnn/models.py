@@ -1,6 +1,6 @@
 import torch
 from typing import Literal
-from deepsudoku.nn import se_resnet, transformer, sudoker
+from deepsudoku.dsnn import se_resnet, transformer, sudoker
 
 models = {
     "SeResNet": lambda: se_resnet.SeResNet(10, 128, 32),

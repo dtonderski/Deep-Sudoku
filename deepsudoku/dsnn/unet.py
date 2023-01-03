@@ -19,12 +19,12 @@ class ConvolutionTriplet(nn.Module):
         # Kernels should always be odd: decrease by one if image res is even
         # vh_kernel_size = resolution - (1 - resolution % 2)
 
-        # self.conv_normal = nn.Conv2d(input_channels, output_channels // 2,
+        # self.conv_normal = dsnn.Conv2d(input_channels, output_channels // 2,
         #                              (3, 3), padding='same')
-        # self.conv_horizontal = nn.Conv2d(input_channels,
+        # self.conv_horizontal = dsnn.Conv2d(input_channels,
         #                                  output_channels // 4,
         #                                  (1, vh_kernel_size), padding='same')
-        # self.conv_vertical = nn.Conv2d(input_channels, output_channels // 4,
+        # self.conv_vertical = dsnn.Conv2d(input_channels, output_channels // 4,
         #                                (vh_kernel_size, 1), padding='same')
         self.conv = nn.Conv2d(input_channels, output_channels, (3, 3),
                               padding='same')
