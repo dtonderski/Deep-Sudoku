@@ -3,18 +3,22 @@ A sudoku solving package using Monte Carlo Graph Search and AI. Inspired by the 
 "[Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)".
 For a demonstration, see the Solving Sudokus notebook or go to
 
-## Algorithm
-Sudokus are solved by using Monte Carlo Graph Search with our predictor being a neural network estimator. There are
-two key differences between DeepSudoku and AlphaZero:
-
-1. I replace Monte-Carlo Tree Search with [Monte-Carlo Graph Search](https://arxiv.org/pdf/2012.11045.pdf). To explain
+## Novelties
+1. Data - the goal of this project was to solve the most difficult sudokus - sudokus with 17 clues (i.e. filled cells). Most sudoku databases are based off of easier sudokus - for example, [this dataset](https://www.kaggle.com/datasets/radcliffe/3-million-sudoku-puzzles-with-ratings) has at LEAST 19 clues.
+2. Architecture - the best results were achieved using an domain-specific ViT-Ti based architecture, where we alternate running attention row-wise, column-wise, and block-wise. This results in drastically faster training compared to using cell-wise attention. Both attention-based method give drastic performance increase compared to a Squeeze Excitation ResNet.
+3. Sampling - to generate training data, we run a tree search and save all the states encountered during this search. However, later on in the training, the vast majority of encountered states are trivial for the architecture, and do not "teach" it anything. To combat this, we only save states from games where the solver failed to solve the sudoku.
+4. MCGS - I replace the Monte-Carlo Tree Search algorithm used by Alpha Zero with [Monte-Carlo Graph Search](https://arxiv.org/pdf/2012.11045.pdf). To explain
    the basic idea, consider moves $a_1$ and $a_2$. Starting from a sudoku state $s$, making moves $a_1, a_2$ results
    in the same position as making moves $a_2, a_1$. Utilizing this fact allows information exchange between subtrees,
    improving search performance. 
-2. During training, we start from a sudoku position that has been solved deterministically, augment it, and try to solve
-   it using MCGS. Thus, we can easily tell if a state encountered during the search is valid by checking whether
-   all played moves are valid. Because of this fact, training the network is feasible on a consumer-grade GPU with a
-   network architecture identical to AlphaZero's, which used 5000 TPUs for training.
+
+## Algorithm
+Sudokus are solved by using Monte Carlo Graph Search with our predictor being a neural network estimator. The key difference allowing me to train this estimator in a reasonable time-frame is the following:
+
+During training, we start from a sudoku position that has been solved deterministically, augment it, and try to solve
+it using MCGS. Thus, we can easily tell if a state encountered during the search is valid by checking whether
+all played moves are valid. Because of this fact, training the network is feasible on a consumer-grade GPU with a
+network architecture identical to AlphaZero's, which used 5000 TPUs for training.
 
 For each move, a number of simulation iterations are run. Each iteration consists of exploring the move tree until a 
 leaf or terminal node is hit. Then, the value (the probability of the node being valid) and the policy 
