@@ -1,6 +1,7 @@
+from typing import Tuple
+
 import torch
 import torch.nn.functional as functional
-from typing import Tuple
 
 
 def get_binary_cross_entropy_weights(v_target, eps=1e-5):

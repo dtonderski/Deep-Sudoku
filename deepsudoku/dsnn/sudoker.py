@@ -1,8 +1,9 @@
+import einops
 import torch
 from torch import nn
-import einops
+
+from deepsudoku.dsnn.transformer import Decoder, Embedding, MLPBlock
 from deepsudoku.utils.network_utils import to_categorical
-from deepsudoku.dsnn.transformer import Embedding, MLPBlock, Decoder
 
 
 class MultiHeadedAttention(nn.Module):

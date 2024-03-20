@@ -1,9 +1,9 @@
-import torch
-from deepsudoku.utils import network_utils
 import pytest
+import torch
 
-test_shapes = [(4096, 1, 9, 9),
-               (1, 1, 9, 9)]
+from deepsudoku.utils import network_utils
+
+test_shapes = [(4096, 1, 9, 9), (1, 1, 9, 9)]
 
 
 @pytest.mark.parametrize("shape", test_shapes)

@@ -1,7 +1,9 @@
+from typing import Tuple
+
 import numpy as np
+
 from deepsudoku.montecarlo.sudoku_state import SudokuState
 from deepsudoku.utils.data_utils import load_difficulty
-from typing import Tuple
 
 
 def get_n_simulations_function(

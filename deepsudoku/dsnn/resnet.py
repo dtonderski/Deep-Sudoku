@@ -1,7 +1,8 @@
+from typing import Tuple
+
 import torch
 from torch import nn
 from torch.nn import functional
-from typing import Tuple
 
 
 class ConvBlock(nn.Module):

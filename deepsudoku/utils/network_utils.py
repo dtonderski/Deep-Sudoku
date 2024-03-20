@@ -1,6 +1,7 @@
-import torch
+from typing import Literal, Tuple
+
 import numpy as np
-from typing import Tuple, Literal
+import torch
 
 
 def to_categorical(tensor):

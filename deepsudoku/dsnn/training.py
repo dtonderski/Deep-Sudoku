@@ -1,13 +1,12 @@
 import random
 from datetime import datetime
+from typing import List, Tuple
 
+import numpy as np
 import torch
 
-from deepsudoku.montecarlo.sudoku_state import SudokuState
 from deepsudoku.montecarlo.simulation import play_sudoku_until_failure
-
-from typing import List, Tuple
-import numpy as np
+from deepsudoku.montecarlo.sudoku_state import SudokuState
 
 
 def generate_training_data(

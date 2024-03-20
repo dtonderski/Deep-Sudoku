@@ -1,11 +1,13 @@
-import torch
 from collections import defaultdict
 from datetime import datetime
-from deepsudoku.montecarlo.sudoku_state import SudokuState
-from deepsudoku.montecarlo.simulation import play_sudoku_until_failure
 from operator import itemgetter
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 import numpy as np
+import torch
+
+from deepsudoku.montecarlo.simulation import play_sudoku_until_failure
+from deepsudoku.montecarlo.sudoku_state import SudokuState
 
 
 def categorical_accuracy(

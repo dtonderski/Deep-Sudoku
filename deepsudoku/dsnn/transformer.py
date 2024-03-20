@@ -1,7 +1,8 @@
-import torch
-from torch import nn
 import einops
+import torch
 from einops.layers.torch import Rearrange
+from torch import nn
+
 from deepsudoku.utils.network_utils import to_categorical
 
 

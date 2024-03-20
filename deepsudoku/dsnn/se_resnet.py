@@ -1,7 +1,8 @@
 import torch
 from torch import nn
-from deepsudoku.utils.network_utils import to_categorical
 from torchvision.ops import SqueezeExcitation
+
+from deepsudoku.utils.network_utils import to_categorical
 
 
 class ConvBlock(nn.Module):

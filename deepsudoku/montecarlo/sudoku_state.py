@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import Dict, List, Set, Tuple
+
 import numpy as np
 import torch
-from typing import Set, Tuple, List, Dict
 
 
 class SudokuState:

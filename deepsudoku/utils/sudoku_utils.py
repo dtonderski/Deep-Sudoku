@@ -1,10 +1,11 @@
-from typing import Tuple, List
+import os
+import pickle
+from typing import List, Tuple
 
 import numpy as np
 from sudoku import Sudoku
+
 from deepsudoku.config import Data
-import os
-import pickle
 
 
 def load_seed() -> List[str]:
