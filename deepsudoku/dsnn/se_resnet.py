@@ -7,8 +7,9 @@ from torchvision.ops import SqueezeExcitation
 class ConvBlock(nn.Module):
     def __init__(self, filters):
         super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels=9, out_channels=filters,
-                              kernel_size=3, padding=1)
+        self.conv = nn.Conv2d(
+            in_channels=9, out_channels=filters, kernel_size=3, padding=1
+        )
         self.bn = nn.BatchNorm2d(filters)
 
     def forward(self, x):
@@ -18,12 +19,14 @@ class ConvBlock(nn.Module):
 class SeResBlock(nn.Module):
     def __init__(self, filters, se_channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels=filters, out_channels=filters,
-                               kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(
+            in_channels=filters, out_channels=filters, kernel_size=3, padding=1
+        )
 
         self.bn1 = nn.BatchNorm2d(filters)
-        self.conv2 = nn.Conv2d(in_channels=filters, out_channels=filters,
-                               kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(
+            in_channels=filters, out_channels=filters, kernel_size=3, padding=1
+        )
         self.bn2 = nn.BatchNorm2d(filters)
         self.se = SqueezeExcitation(filters, se_channels)
 
@@ -39,11 +42,13 @@ class SeResBlock(nn.Module):
 class PolicyBlock(nn.Module):
     def __init__(self, filters):
         super(PolicyBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=filters, out_channels=filters,
-                               kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(
+            in_channels=filters, out_channels=filters, kernel_size=3, padding=1
+        )
         self.bn1 = nn.BatchNorm2d(filters)
-        self.conv2 = nn.Conv2d(in_channels=filters, out_channels=9,
-                               kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(
+            in_channels=filters, out_channels=9, kernel_size=3, padding=1
+        )
 
     def forward(self, x):
         x = torch.relu(self.bn1(self.conv1(x)))
@@ -54,9 +59,12 @@ class ValueBlock(nn.Module):
     def __init__(self, filters, value_channels, dropout):
         super(ValueBlock, self).__init__()
         self.value_channels = value_channels
-        self.conv = nn.Conv2d(in_channels=filters,
-                              out_channels=value_channels,
-                              kernel_size=3, padding=1)
+        self.conv = nn.Conv2d(
+            in_channels=filters,
+            out_channels=value_channels,
+            kernel_size=3,
+            padding=1,
+        )
         self.bn = nn.BatchNorm2d(value_channels)
         self.dropout1 = nn.Dropout(p=dropout)
         self.fc1 = nn.Linear(value_channels * 9 * 9, 128)
@@ -73,16 +81,18 @@ class ValueBlock(nn.Module):
 
 
 class SeResNet(nn.Module):
-    def __init__(self, blocks, filters, se_channels, dropout=0.2,
-                 value_channels=32):
+    def __init__(
+        self, blocks, filters, se_channels, dropout=0.2, value_channels=32
+    ):
         super().__init__()
         self.blocks = blocks
         self.convBlock = ConvBlock(filters)
 
         for i in range(self.blocks):
             setattr(self, f"block_{i}", SeResBlock(filters, se_channels))
-        self.valueBlock = ValueBlock(filters, value_channels=value_channels,
-                                     dropout=dropout)
+        self.valueBlock = ValueBlock(
+            filters, value_channels=value_channels, dropout=dropout
+        )
         self.policyBlock = PolicyBlock(filters)
 
     def forward(self, x: torch.Tensor):
@@ -117,5 +127,5 @@ def main():
     print(x[0].shape, x[1].shape)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

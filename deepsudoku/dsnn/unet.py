@@ -8,8 +8,9 @@ class ResidualBlock(nn.Module):
 
 
 class ConvolutionTriplet(nn.Module):
-    def __init__(self, input_channels: int, output_channels: int,
-                 resolution: int):
+    def __init__(
+        self, input_channels: int, output_channels: int, resolution: int
+    ):
         super().__init__()
 
         # Not currently used as below experimentation did not work
@@ -24,10 +25,12 @@ class ConvolutionTriplet(nn.Module):
         # self.conv_horizontal = dsnn.Conv2d(input_channels,
         #                                  output_channels // 4,
         #                                  (1, vh_kernel_size), padding='same')
-        # self.conv_vertical = dsnn.Conv2d(input_channels, output_channels // 4,
-        #                                (vh_kernel_size, 1), padding='same')
-        self.conv = nn.Conv2d(input_channels, output_channels, (3, 3),
-                              padding='same')
+        # self.conv_vertical = dsnn.Conv2d(input_channels,
+        #                                  output_channels // 4,
+        #                                  (vh_kernel_size, 1), padding='same')
+        self.conv = nn.Conv2d(
+            input_channels, output_channels, (3, 3), padding="same"
+        )
 
     def forward(self, x):
         # x1 = self.conv_normal(x)
@@ -39,20 +42,26 @@ class ConvolutionTriplet(nn.Module):
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, input_resolution, input_channels, output_channels,
-                 mid_channels=None):
+    def __init__(
+        self,
+        input_resolution,
+        input_channels,
+        output_channels,
+        mid_channels=None,
+    ):
         super().__init__()
         if mid_channels is None:
             mid_channels = output_channels
         self.block1 = nn.Sequential(
             ConvolutionTriplet(input_channels, mid_channels, input_resolution),
-            nn.BatchNorm2d(mid_channels)
+            nn.BatchNorm2d(mid_channels),
         )
 
         self.block2 = nn.Sequential(
-            ConvolutionTriplet(mid_channels, output_channels,
-                               input_resolution),
-            nn.BatchNorm2d(output_channels)
+            ConvolutionTriplet(
+                mid_channels, output_channels, input_resolution
+            ),
+            nn.BatchNorm2d(output_channels),
         )
 
     def forward(self, x):
@@ -68,8 +77,9 @@ class ValueBlock(nn.Module):
     def __init__(self, in_channels, n_channels=3, n_hidden=64):
         super().__init__()
         self.n_channels = n_channels
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=n_channels,
-                              kernel_size=1)
+        self.conv = nn.Conv2d(
+            in_channels=in_channels, out_channels=n_channels, kernel_size=1
+        )
         self.bn = nn.BatchNorm2d(n_channels)
         self.fc1 = nn.Linear(n_channels * 9 * 9, n_hidden)
         self.fc2 = nn.Linear(n_hidden, 1)
@@ -84,8 +94,12 @@ class ValueBlock(nn.Module):
 class PolicyBlock(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=9,
-                              kernel_size=3, padding='same')
+        self.conv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=9,
+            kernel_size=3,
+            padding="same",
+        )
 
     def forward(self, x):
         return self.conv(x)
@@ -110,8 +124,9 @@ class UNet(nn.Module):
         self.up3 = UpBlock(128, 64, 9, 1)
         # 128, 9, 9
         self.policy = PolicyBlock(64)
-        self.value = ValueBlock(64, n_channels=value_channels,
-                                n_hidden=value_hidden)
+        self.value = ValueBlock(
+            64, n_channels=value_channels, n_hidden=value_hidden
+        )
 
     def forward(self, x):
         x1 = self.conv1(x)
@@ -129,7 +144,7 @@ class DownBlock(nn.Module):
         super().__init__()
         self.block = nn.Sequential(
             nn.MaxPool2d(2, stride),
-            ConvBlock(resolution, in_channels, out_channels)
+            ConvBlock(resolution, in_channels, out_channels),
         )
 
     def forward(self, x):
@@ -139,24 +154,32 @@ class DownBlock(nn.Module):
 class UpBlock(nn.Module):
     def __init__(self, in_channels, out_channels, resolution, stride):
         super().__init__()
-        self.up_sample = nn.ConvTranspose2d(in_channels, out_channels, 2,
-                                            stride)
+        self.up_sample = nn.ConvTranspose2d(
+            in_channels, out_channels, 2, stride
+        )
         self.up = ConvBlock(resolution, in_channels, out_channels)
 
     def forward(self, x, x_skip):
-        """ Pad x so that x and x_skip are the same size """
+        """Pad x so that x and x_skip are the same size"""
         x = self.up_sample(x)
 
         diff_x = x_skip.shape[2] - x.shape[2]
         diff_y = x_skip.shape[3] - x.shape[3]
 
-        x = functional.pad(x, [diff_x // 2, diff_x - diff_x // 2,
-                               diff_y // 2, diff_y - diff_y // 2])
+        x = functional.pad(
+            x,
+            [
+                diff_x // 2,
+                diff_x - diff_x // 2,
+                diff_y // 2,
+                diff_y - diff_y // 2,
+            ],
+        )
 
         return self.up(torch.concat([x, x_skip], 1))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sudoku = torch.zeros(1, 1, 9, 9)
     model = UNet()
     p, v = model(sudoku)

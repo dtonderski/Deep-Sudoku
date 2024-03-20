@@ -13,9 +13,11 @@ def to_categorical(tensor):
     return cat.permute(0, 3, 1, 2)
 
 
-def numpy_batch_to_pytorch(x_train: np.ndarray,
-                           y_train: Tuple[np.ndarray, np.ndarray],
-                           device: Literal['cuda', 'cpu'] = 'cuda'):
+def numpy_batch_to_pytorch(
+    x_train: np.ndarray,
+    y_train: Tuple[np.ndarray, np.ndarray],
+    device: Literal["cuda", "cpu"] = "cuda",
+):
     """
 
     :param x_train: np uint8 array of size (n,9,9) with unsolved sudokus
@@ -30,6 +32,8 @@ def numpy_batch_to_pytorch(x_train: np.ndarray,
 
     """
     x_train = torch.tensor(x_train.reshape((-1, 1, 9, 9))).float().to(device)
-    y_train = (torch.tensor(y_train[0] - 1).long().to(device),
-               torch.tensor(y_train[1]).float().to(device))
+    y_train = (
+        torch.tensor(y_train[0] - 1).long().to(device),
+        torch.tensor(y_train[1]).float().to(device),
+    )
     return x_train, y_train

@@ -7,8 +7,13 @@ from typing import Tuple
 class ConvBlock(nn.Module):
     def __init__(self):
         super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels=1, out_channels=64,
-                              kernel_size=(3, 3), stride=(1, 1), padding=1)
+        self.conv = nn.Conv2d(
+            in_channels=1,
+            out_channels=64,
+            kernel_size=(3, 3),
+            stride=(1, 1),
+            padding=1,
+        )
         self.bn = nn.BatchNorm2d(64)
 
     def forward(self, s):
@@ -18,14 +23,22 @@ class ConvBlock(nn.Module):
 class ResBlock(nn.Module):
     def __init__(self):
         super(ResBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=64, out_channels=64,
-                               kernel_size=(3, 3), stride=(1, 1),
-                               padding=1)
+        self.conv1 = nn.Conv2d(
+            in_channels=64,
+            out_channels=64,
+            kernel_size=(3, 3),
+            stride=(1, 1),
+            padding=1,
+        )
 
         self.bn1 = nn.BatchNorm2d(64)
-        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64,
-                               kernel_size=(3, 3), stride=(1, 1),
-                               padding=1)
+        self.conv2 = nn.Conv2d(
+            in_channels=64,
+            out_channels=64,
+            kernel_size=(3, 3),
+            stride=(1, 1),
+            padding=1,
+        )
         self.bn2 = nn.BatchNorm2d(64)
 
     def forward(self, x):
@@ -40,8 +53,7 @@ class ResBlock(nn.Module):
 class ValueBlock(nn.Module):
     def __init__(self):
         super(ValueBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels=64, out_channels=3,
-                              kernel_size=1)
+        self.conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1)
         self.bn = nn.BatchNorm2d(3)
         self.fc1 = nn.Linear(3 * 9 * 9, 32)
         self.fc2 = nn.Linear(32, 1)
@@ -56,8 +68,13 @@ class ValueBlock(nn.Module):
 class PolicyBlock(nn.Module):
     def __init__(self):
         super(PolicyBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels=64, out_channels=9,
-                              kernel_size=(3, 3), stride=(1, 1), padding=1)
+        self.conv = nn.Conv2d(
+            in_channels=64,
+            out_channels=9,
+            kernel_size=(3, 3),
+            stride=(1, 1),
+            padding=1,
+        )
 
     def forward(self, x):
         return self.conv(x)
@@ -93,9 +110,11 @@ class Network(nn.Module):
         return p, v
 
 
-def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
-            target: Tuple[torch.Tensor, torch.Tensor],
-            weight=1):
+def my_loss(
+    output: Tuple[torch.Tensor, torch.Tensor],
+    target: Tuple[torch.Tensor, torch.Tensor],
+    weight=1,
+):
     """
 
     :param output: see output of Network.forward
@@ -107,6 +126,7 @@ def my_loss(output: Tuple[torch.Tensor, torch.Tensor],
     :return: numerical value of the loss
     """
     p_loss = functional.cross_entropy(output[0], target[0])
-    v_loss = weight * functional.binary_cross_entropy_with_logits(output[1],
-                                                                  target[1])
+    v_loss = weight * functional.binary_cross_entropy_with_logits(
+        output[1], target[1]
+    )
     return p_loss + v_loss

@@ -26,3 +26,11 @@ where = ["deepsudoku"]
 
 [tool.setuptools.package-data]
 mypkg = ["*.pkl", "*.pth"]
+
+[tool.flake8]
+extend-ignore = ['E203'] # black convention for slices is incompatible
+
+[tool.black]
+line-length = 79
+target-version = ['py39']
+preview = true

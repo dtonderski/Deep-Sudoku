@@ -14,7 +14,7 @@ def categorical_test(board: np.ndarray):
 def test_to_categorical():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
     rng = np.random.default_rng(1)
-    for iteration in range(20):
+    for _ in range(20):
         board_index = rng.choice(range(len(sudokus)))
         board, solved = sudokus[board_index]
 
@@ -25,7 +25,7 @@ def test_to_categorical():
 def test_to_numerical():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
     rng = np.random.default_rng(2)
-    for iteration in range(20):
+    for _ in range(20):
         board_index = rng.choice(range(len(sudokus)))
         board, solved = sudokus[board_index]
 

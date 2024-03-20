@@ -24,13 +24,18 @@ class SudokuState:
     simulations_function: callable
     hash: int
 
-    def __init__(self, sudoku_board: np.ndarray, network: torch.nn.Module,
-                 simulations_function: callable,
-                 parent: SudokuState = None,
-                 action_set: Set[Tuple[int, int, int]] = None,
-                 encountered_states: List[np.ndarray] = None,
-                 transposition_table: Dict[int, SudokuState] = None,
-                 use_PUCTS: bool = False, c_PUCTS: float = 1):
+    def __init__(
+        self,
+        sudoku_board: np.ndarray,
+        network: torch.nn.Module,
+        simulations_function: callable,
+        parent: SudokuState = None,
+        action_set: Set[Tuple[int, int, int]] = None,
+        encountered_states: List[np.ndarray] = None,
+        transposition_table: Dict[int, SudokuState] = None,
+        use_PUCTS: bool = False,
+        c_PUCTS: float = 1,
+    ):
         """
 
         :param sudoku_board: (..., 9, 9) numpy array, where ... can be any
@@ -54,16 +59,20 @@ class SudokuState:
         self.use_PUCTS = use_PUCTS
         self.c_PUCTS = c_PUCTS
 
-        self.N = np.zeros((9, 9, 9), dtype='uint16')
-        self.W = np.zeros((9, 9, 9), dtype='float16')
-        self.Q = np.zeros((9, 9, 9), dtype='float16') + 0.5
+        self.N = np.zeros((9, 9, 9), dtype="uint16")
+        self.W = np.zeros((9, 9, 9), dtype="float16")
+        self.Q = np.zeros((9, 9, 9), dtype="float16") + 0.5
 
         self.N_sum = 0.001
 
         self.network = network
         with torch.no_grad():
-            sudoku_board_tensor = torch.tensor(sudoku_board).float().reshape(
-                (-1, 1, 9, 9)).cuda()
+            sudoku_board_tensor = (
+                torch.tensor(sudoku_board)
+                .float()
+                .reshape((-1, 1, 9, 9))
+                .cuda()
+            )
             p_raw, v_raw = self.network(sudoku_board_tensor)
             self.P = torch.softmax(p_raw, 1)[0].cpu().numpy()
             self.V = torch.sigmoid(v_raw)[0][0].cpu().numpy()
@@ -81,15 +90,15 @@ class SudokuState:
         self.action_set = action_set if action_set is not None else set()
         self.children = {}
 
-        self.encountered_states = (encountered_states
-                                   if encountered_states is not None
-                                   else [])
+        self.encountered_states = (
+            encountered_states if encountered_states is not None else []
+        )
 
         self.encountered_states.append(sudoku_board)
 
-        self.transposition_table = (transposition_table
-                                    if transposition_table is not None
-                                    else dict())
+        self.transposition_table = (
+            transposition_table if transposition_table is not None else dict()
+        )
         self.hash = self.calculate_hash()
         self.transposition_table[self.hash] = self
 
@@ -116,26 +125,30 @@ class SudokuState:
 
                 self.leaf = False
 
-                child = SudokuState(child_sudoku_board,
-                                    self.network,
-                                    self.simulations_function,
-                                    self,
-                                    self.action_set.union({action}),
-                                    self.encountered_states,
-                                    self.transposition_table,
-                                    use_PUCTS=self.use_PUCTS,
-                                    c_PUCTS=self.c_PUCTS)
+                child = SudokuState(
+                    child_sudoku_board,
+                    self.network,
+                    self.simulations_function,
+                    self,
+                    self.action_set.union({action}),
+                    self.encountered_states,
+                    self.transposition_table,
+                    use_PUCTS=self.use_PUCTS,
+                    c_PUCTS=self.c_PUCTS,
+                )
                 self.children[action] = child
         child.last_parent = self
         return child
 
     def get_best_child_simulation(self):
         if self.use_PUCTS:
-            p_scaled = (self.c_PUCTS * self.P * np.sqrt(self.N_sum)
-                        / (1 + self.N))
+            p_scaled = (
+                self.c_PUCTS * self.P * np.sqrt(self.N_sum) / (1 + self.N)
+            )
         else:
             p_scaled = self.P * (
-                    1 - self.N / self.simulations_function(self.n_zeros))
+                1 - self.N / self.simulations_function(self.n_zeros)
+            )
         productivity = self.Q + p_scaled
 
         # We are only interested in nodes where temp_sudoku is 0
@@ -172,12 +185,16 @@ class SudokuState:
         self.W[indices, rows, cols] += leaf_v
 
         self.Q[indices, rows, cols] = (
-                self.W[indices, rows, cols] / self.N[indices, rows, cols])
+            self.W[indices, rows, cols] / self.N[indices, rows, cols]
+        )
 
     def is_valid(self, solution: np.array) -> bool:
         # Solution should be 9 by 9 numpy array with values in [1,9]
-        return np.all(np.logical_or(self.sudoku_board == solution,
-                                    self.sudoku_board == 0))
+        return np.all(
+            np.logical_or(
+                self.sudoku_board == solution, self.sudoku_board == 0
+            )
+        )
 
     def calculate_hash(self) -> int:
         return hash(tuple(self.action_set))

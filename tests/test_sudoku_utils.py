@@ -35,9 +35,9 @@ def test_augmentation():
     sudokus, _ = sudoku_utils.load_latest_sudoku_list()
     rng = np.random.default_rng(1)
 
-    for i in range(20):
+    for _ in range(20):
         board_index = rng.choice(range(len(sudokus)))
-        board, solved = sudokus[board_index]
+        _, solved = sudokus[board_index]
         solved_array = np.array([solved])
         augmented_solved_array = sudoku_utils.augment_sudokus(solved_array,
                                                               rng)

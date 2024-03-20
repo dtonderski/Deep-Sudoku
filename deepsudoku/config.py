@@ -5,10 +5,16 @@ class Data:
         "train_path": "data/train.pkl",
         "val_path": "data/val.pkl",
         "test_path": "data/test.pkl",
-        "difficulty_path": "data/difficulty.pkl"
+        "difficulty_path": "data/difficulty.pkl",
     }
-    __setters = ["seeds_path", "sudoku_lists_dir", "train_path",
-                 "val_path", "test_path", "difficulty_path"]
+    __setters = [
+        "seeds_path",
+        "sudoku_lists_dir",
+        "train_path",
+        "val_path",
+        "test_path",
+        "difficulty_path",
+    ]
 
     @staticmethod
     def config(name):

@@ -1,9 +1,11 @@
-import numpy as np
-from typing import Tuple, List, Callable
-from deepsudoku.utils import sudoku_utils
-from deepsudoku.config import Data
-import pickle
 import importlib.resources
+import pickle
+from typing import Callable, List, Optional, Tuple
+
+import numpy as np
+
+from deepsudoku.config import Data
+from deepsudoku.utils import sudoku_utils
 
 
 def to_categorical(board: np.ndarray) -> np.ndarray:
@@ -13,7 +15,7 @@ def to_categorical(board: np.ndarray) -> np.ndarray:
     :param board: (9,9) board array
     :return: (9,9,9) categorical array
     """
-    flat = board.flatten().astype('uint8')
+    flat = board.flatten().astype("uint8")
     categorical_flat = np.eye(10)[flat]
     categorical_channels_last = categorical_flat.reshape((9, 9, 10))[:, :, 1:]
     categorical_channels_first = np.moveaxis(categorical_channels_last, -1, 0)
@@ -28,14 +30,18 @@ def to_numerical(board_cat: np.ndarray) -> np.ndarray:
     :param board_cat: (9,9,9) categorical array with channels first
     :return: (9,9) board array
     """
-    board_num = np.zeros((9, 9), dtype='uint8')
+    board_num = np.zeros((9, 9), dtype="uint8")
     for i in np.argwhere(board_cat):
         board_num[i[1], i[2]] = i[0] + 1
     return board_num
 
 
-def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
-               test_fraction: float = 0.1, rng_seed: int = 0):
+def split_data(
+    train_fraction: float = 0.7,
+    val_fraction: float = 0.2,
+    test_fraction: float = 0.1,
+    rng_seed: int = 0,
+):
     """
     Function that loads in the latest sudoku list, randomly (using rng_seed)
     splits the sudokus into train, validation and test sets, and dumps each set
@@ -47,42 +53,45 @@ def split_data(train_fraction: float = 0.7, val_fraction: float = 0.2,
     :return:
     """
     sudokus, start_line = sudoku_utils.load_latest_sudoku_list()
-    assert (train_fraction + val_fraction + test_fraction <= 1)
+    assert train_fraction + val_fraction + test_fraction <= 1
     indices = list(range(len(sudokus)))
     rng = np.random.default_rng(rng_seed)
     rng.shuffle(indices)
     val_start_index = int(len(sudokus) * train_fraction)
     test_start_index = int(len(sudokus) * (train_fraction + val_fraction))
 
-    with open(Data.config("train_path"), 'wb') as handle:
+    with open(Data.config("train_path"), "wb") as handle:
         pickle.dump(sudokus[:val_start_index], handle)
 
-    with open(Data.config("val_path"), 'wb') as handle:
+    with open(Data.config("val_path"), "wb") as handle:
         pickle.dump(sudokus[val_start_index:test_start_index], handle)
 
-    with open(Data.config("test_path"), 'wb') as handle:
+    with open(Data.config("test_path"), "wb") as handle:
         pickle.dump(sudokus[test_start_index:], handle)
 
 
-def load_data() -> Tuple[List[Tuple[np.ndarray, np.ndarray]],
-List[Tuple[np.ndarray, np.ndarray]],
-List[Tuple[np.ndarray, np.ndarray]]]:
+def load_data() -> Tuple[
+    List[Tuple[np.ndarray, np.ndarray]],
+    List[Tuple[np.ndarray, np.ndarray]],
+    List[Tuple[np.ndarray, np.ndarray]],
+]:
     """
     :return: tuple of lists of training, validation, and test sudokus. Each
              list consists of tuples of unsolved and solved sudokus.
 
     """
-    with open(Data.config("train_path"), 'rb') as handle:
+    with open(Data.config("train_path"), "rb") as handle:
         train_sudokus = pickle.load(handle)
-    with open(Data.config("val_path"), 'rb') as handle:
+    with open(Data.config("val_path"), "rb") as handle:
         val_sudokus = pickle.load(handle)
-    with open(Data.config("test_path"), 'rb') as handle:
+    with open(Data.config("test_path"), "rb") as handle:
         test_sudokus = pickle.load(handle)
     return train_sudokus, val_sudokus, test_sudokus
 
 
-def uniform_possible_moves_distribution(max_possible_moves: int = 64) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def uniform_possible_moves_distribution(
+    max_possible_moves: int = 64,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Function returning a uniform distribution over possible moves
     :param max_possible_moves: highest number of moves to make
@@ -109,8 +118,9 @@ def difficulty_distribution():
     return possible_numbers_of_moves_to_make, probabilities
 
 
-def difficulty_uniform_combo_distribution(uniform_scale=0.5) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def difficulty_uniform_combo_distribution(
+    uniform_scale=0.5,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Returns a distribution that is the normalized sum of the difficulty
     distribution and a uniform distribution scaled by factor uniform_scale
@@ -119,16 +129,19 @@ def difficulty_uniform_combo_distribution(uniform_scale=0.5) \
     """
     difficulty_moves, difficulty_probabilities = difficulty_distribution()
     uniform_moves, uniform_probabilities = (
-        uniform_possible_moves_distribution())
+        uniform_possible_moves_distribution()
+    )
 
-    new_probabilities = (difficulty_probabilities + uniform_probabilities *
-                         uniform_scale)
+    new_probabilities = (
+        difficulty_probabilities + uniform_probabilities * uniform_scale
+    )
     new_probabilities = new_probabilities / new_probabilities.sum()
     return difficulty_moves, new_probabilities
 
 
-def zero_moves_distribution(max_possible_moves: int = 64) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def zero_moves_distribution(
+    max_possible_moves: int = 64,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Function returning a distribution over possible moves with the zero element
     having probability 1. Was used for testing, currently unused.
@@ -141,8 +154,9 @@ def zero_moves_distribution(max_possible_moves: int = 64) \
     return possible_numbers_of_moves_to_make, probabilities
 
 
-def uniform_invalid_moves_fraction_distribution(linspace_elements=30) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def uniform_invalid_moves_fraction_distribution(
+    linspace_elements=30,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Currently unused
     :param linspace_elements:
@@ -153,14 +167,13 @@ def uniform_invalid_moves_fraction_distribution(linspace_elements=30) \
     return possible_invalid_move_fractions, np.array(probabilities)
 
 
-def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
-               n_moves_distribution: Callable =
-               uniform_possible_moves_distribution,
-               invalid_sudoku_probability: float = 0,
-               invalid_moves_fraction_distribution: Callable =
-               uniform_invalid_moves_fraction_distribution,
-               rng_seed: int = None) \
-        -> List[Tuple[np.ndarray, np.ndarray, bool]]:
+def make_moves(
+    sudokus: List[Tuple[np.ndarray, np.ndarray]],
+    n_moves_distribution: Callable = uniform_possible_moves_distribution,
+    invalid_sudoku_probability: float = 0,
+    invalid_moves_fraction_distribution: Optional[Callable] = None,
+    rng_seed: int = None,
+) -> List[Tuple[np.ndarray, np.ndarray, bool]]:
     """
     Take in a distribution of number of moves to make, the probability of
     making ANY invalid moves, and the distribution of fraction of moves
@@ -178,40 +191,53 @@ def make_moves(sudokus: List[Tuple[np.ndarray, np.ndarray]],
     :return: list of (tuple of (unsolved and solved sudokus with moves made and
              bool saying if sudoku is valid))
     """
+    if invalid_moves_fraction_distribution is None:
+        invalid_moves_fraction_distribution = (
+            uniform_invalid_moves_fraction_distribution
+        )
+
     n_sudokus = len(sudokus)
     rng = np.random.default_rng(rng_seed)
 
     possible_numbers_of_moves_to_make, probabilities = n_moves_distribution()
-    n_moves = rng.choice(possible_numbers_of_moves_to_make, size=n_sudokus,
-                         p=probabilities)
+    n_moves = rng.choice(
+        possible_numbers_of_moves_to_make, size=n_sudokus, p=probabilities
+    )
 
-    possible_invalid_move_fractions, probabilities = \
+    possible_invalid_move_fractions, probabilities = (
         invalid_moves_fraction_distribution()
+    )
 
-    invalid_move_fractions = rng.choice(possible_invalid_move_fractions,
-                                        size=n_sudokus, p=probabilities)
+    invalid_move_fractions = rng.choice(
+        possible_invalid_move_fractions, size=n_sudokus, p=probabilities
+    )
 
     sudoku_invalid = rng.binomial([1] * n_sudokus, invalid_sudoku_probability)
     # make 0 invalid moves if sudoku is supposed to be valid
-    n_invalid_moves_to_make = (np.floor(invalid_move_fractions * n_moves)
-                               * sudoku_invalid).astype(int)
+    n_invalid_moves_to_make = (
+        np.floor(invalid_move_fractions * n_moves) * sudoku_invalid
+    ).astype(int)
     n_valid_moves_to_make = n_moves - n_invalid_moves_to_make
 
     new_sudokus = []
     for i, (board, solved) in enumerate(sudokus):
-        new_board = sudoku_utils.make_random_moves(board, solved,
-                                                   n_valid_moves_to_make[i],
-                                                   n_invalid_moves_to_make[i],
-                                                   rng_seed)
+        new_board = sudoku_utils.make_random_moves(
+            board,
+            solved,
+            n_valid_moves_to_make[i],
+            n_invalid_moves_to_make[i],
+            rng_seed,
+        )
 
         new_sudokus.append((new_board, solved, not sudoku_invalid[i]))
     return new_sudokus
 
 
-def generate_numpy_batch(sudokus:
-List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
-                         augment: bool = True, rng_seed: int = None) \
-        -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+def generate_numpy_batch(
+    sudokus: List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
+    augment: bool = True,
+    rng_seed: int = None,
+) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function to generate batches. The main problem is this - we want
     reproducible randomness. If we are to generate batches for 100 epochs,
@@ -230,7 +256,8 @@ List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
         board, solved, valid_i = sudokus[i]
         if augment:
             x_aug, y_aug = sudoku_utils.augment_sudokus(
-                np.array([board, solved]), rng)
+                np.array([board, solved]), rng
+            )
             x.append(x_aug)
             y.append(y_aug)
             valid.append(valid_i)
@@ -242,10 +269,11 @@ List[Tuple[np.ndarray, np.ndarray, np.ndarray]],
     return np.array(x), (np.array(y), np.array(valid)[..., np.newaxis])
 
 
-def fast_generate_numpy_batch(sudokus:
-List[Tuple[np.ndarray, np.ndarray, bool]],
-                              augment: bool = True, rng_seed: int = None) \
-        -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+def fast_generate_numpy_batch(
+    sudokus: List[Tuple[np.ndarray, np.ndarray, bool]],
+    augment: bool = True,
+    rng_seed: int = None,
+) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Function that does the same as generate_batch, but each sudoku in the batch
     is augmented in the same way. This way is about 25 times faster than
@@ -267,10 +295,11 @@ List[Tuple[np.ndarray, np.ndarray, bool]],
 
     if augment:
         sudokus = x + y_board
-        augmented_sudokus = sudoku_utils.augment_sudokus(np.array(sudokus),
-                                                         rng)
-        x = augmented_sudokus[:len(augmented_sudokus) // 2]
-        y_board = augmented_sudokus[len(augmented_sudokus) // 2:]
+        augmented_sudokus = sudoku_utils.augment_sudokus(
+            np.array(sudokus), rng
+        )
+        x = augmented_sudokus[: len(augmented_sudokus) // 2]
+        y_board = augmented_sudokus[len(augmented_sudokus) // 2 :]
     else:
         x = np.stack(x)
         y_board = np.stack(y_board)
@@ -281,7 +310,7 @@ List[Tuple[np.ndarray, np.ndarray, bool]],
 
 
 def save_difficulty(difficulty: np.ndarray):
-    with open(Data.config('difficulty_path'), 'wb') as f:
+    with open(Data.config("difficulty_path"), "wb") as f:
         pickle.dump(np.array(difficulty), f)
 
 
@@ -292,8 +321,10 @@ def load_difficulty(use_builtin_difficulty=True) -> np.ndarray:
              difficulty = 1 for sudokus with 64 empty cells
     """
     if use_builtin_difficulty:
-        difficulty = importlib.resources.read_binary("deepsudoku.resources", "difficulty.pkl")
+        difficulty = importlib.resources.read_binary(
+            "deepsudoku.resources", "difficulty.pkl"
+        )
         return pickle.loads(difficulty)
     else:
-        with open(Data.config('difficulty_path'), 'rb') as f:
+        with open(Data.config("difficulty_path"), "rb") as f:
             return pickle.load(f)

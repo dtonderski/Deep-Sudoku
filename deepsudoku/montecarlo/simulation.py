@@ -4,26 +4,33 @@ from deepsudoku.utils.data_utils import load_difficulty
 from typing import Tuple
 
 
-def get_n_simulations_function(min_simulations: int, max_simulations: int,
-                               difficulty: np.ndarray = None,
-                               use_builtin_difficulty=True) -> callable:
+def get_n_simulations_function(
+    min_simulations: int,
+    max_simulations: int,
+    difficulty: np.ndarray = None,
+    use_builtin_difficulty=True,
+) -> callable:
     if difficulty is None:
-        difficulty = load_difficulty(use_builtin_difficulty=use_builtin_difficulty)
+        difficulty = load_difficulty(
+            use_builtin_difficulty=use_builtin_difficulty
+        )
 
     def n_simulations_function(n_zeros: int) -> int:
-        n_simulations = int(max(difficulty[int(n_zeros)] * max_simulations,
-                                min_simulations))
+        n_simulations = int(
+            max(difficulty[int(n_zeros)] * max_simulations, min_simulations)
+        )
         return n_simulations
 
     return n_simulations_function
 
 
-def run_simulations(node: SudokuState, n_simulations_function: callable,
-                    use_steps_taken=True):
+def run_simulations(
+    node: SudokuState, n_simulations_function: callable, use_steps_taken=True
+):
     root = node
     start = node.N.sum() if use_steps_taken else 0
 
-    for i in range(start, n_simulations_function(node.n_zeros)):
+    for _ in range(start, n_simulations_function(node.n_zeros)):
         while True:
             if node.leaf or node.n_zeros == 0:
                 node.leaf = False
@@ -43,9 +50,9 @@ def run_simulations(node: SudokuState, n_simulations_function: callable,
                 node = node.get_best_child_simulation()
 
 
-def play_sudoku_until_failure(node: SudokuState, solution: np.ndarray,
-                              n_simulations_function: callable) \
-        -> Tuple[SudokuState, bool]:
+def play_sudoku_until_failure(
+    node: SudokuState, solution: np.ndarray, n_simulations_function: callable
+) -> Tuple[SudokuState, bool]:
     successful_game = True
 
     while node.n_zeros > 0:
@@ -58,7 +65,9 @@ def play_sudoku_until_failure(node: SudokuState, solution: np.ndarray,
     return node, successful_game
 
 
-def play_sudoku(node: SudokuState, n_simulations_function: callable) -> SudokuState:
+def play_sudoku(
+    node: SudokuState, n_simulations_function: callable
+) -> SudokuState:
     while node.n_zeros > 0:
         run_simulations(node, n_simulations_function)
         node, move = node.get_best_child_evaluation()

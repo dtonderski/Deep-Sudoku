@@ -3,9 +3,10 @@ from typing import Tuple
 
 
 def getFractionOfEmptyCellsFilledCorrectly(
-        output: Tuple[torch.Tensor, torch.Tensor],
-        target: Tuple[torch.Tensor, torch.Tensor],
-        input: torch.Tensor):
+    output: Tuple[torch.Tensor, torch.Tensor],
+    target: Tuple[torch.Tensor, torch.Tensor],
+    input: torch.Tensor,
+):
     """
     Function taking in network input, output, and target, and returning a
     tensor containing the fractions of empty cells filled correctly for each
@@ -31,7 +32,11 @@ def getFractionOfEmptyCellsFilledCorrectly(
         cells filled correctly for each sudoku.
     """
 
-    emptyCellsFilledCorrectly = torch.sum(torch.logical_and(
-        torch.max(output[0], 1)[1] == target[0], input[:, 0] == 0), (1, 2))
+    emptyCellsFilledCorrectly = torch.sum(
+        torch.logical_and(
+            torch.max(output[0], 1)[1] == target[0], input[:, 0] == 0
+        ),
+        (1, 2),
+    )
     emptyCells = torch.sum(input == 0, (1, 2, 3))
     return emptyCellsFilledCorrectly / emptyCells
