@@ -16,7 +16,7 @@ def load_model(model_name: Literal["SeResNet", "ViTTiTransformer", "ViTTiSudoker
     model = models[model_name]().to(device)
     if use_builtin_checkpoint:
         if model_name != 'ViTTiSudoker':
-            print("Can only use builtin checkpoint if model_name is ViTTiSudoker!")
+            print(f"Not loading built-in checkpoint - checkpoint not included for {model_name=}!")
             return model
         with importlib.resources.path("deepsudoku.resources", "ViTTiSudoker.pth") as checkpoint_path:
             checkpoint = torch.load(checkpoint_path)
