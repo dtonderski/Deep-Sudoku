@@ -8,7 +8,7 @@ To install the framework, simply run
 pip install --upgrade --quiet git+https://github.com/dtonderski/DeepSudoku
 ```
 
-For a demonstration on how to use the framework to solve a sudoku, see the Solving Sudokus notebook.
+For a demonstration on how to use the framework to solve a sudoku, see the Solving sudokus notebook.
 
 ## Novelties
 1. Data - the goal of this project was to solve the most difficult sudokus - sudokus with 17 clues (i.e. filled cells). Most sudoku databases are based off of easier sudokus - for example, [this dataset](https://www.kaggle.com/datasets/radcliffe/3-million-sudoku-puzzles-with-ratings) has at LEAST 19 clues.
