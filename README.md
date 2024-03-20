@@ -1,7 +1,14 @@
 # DeepSudoku
 A sudoku solving package using Monte Carlo Graph Search and AI. Inspired by the AlphaZero paper
 "[Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)".
-For a demonstration, see the Solving Sudokus notebook or go to
+
+## Running
+To install the framework, simply run
+```
+pip install --upgrade --quiet git+https://github.com/dtonderski/DeepSudoku
+```
+
+For a demonstration on how to use the framework to solve a sudoku, see the Solving Sudokus notebook.
 
 ## Novelties
 1. Data - the goal of this project was to solve the most difficult sudokus - sudokus with 17 clues (i.e. filled cells). Most sudoku databases are based off of easier sudokus - for example, [this dataset](https://www.kaggle.com/datasets/radcliffe/3-million-sudoku-puzzles-with-ratings) has at LEAST 19 clues.
@@ -28,7 +35,7 @@ the result of those simulations.
 ## Sudoku data
 It [has been shown](arxiv.org/abs/1201.0749) that a sudoku has to have at least 17 clues (initially filled cells) to 
 have a valid and unique solution. The training data is based on the list of 49151 known 17-clue mathematically 
-equivalent sudokus [published by Gordon Royle](http://mapleta.maths.uwa.edu.au/~gordon/sudokumin.php). The website is 
+non-equivalent sudokus [published by Gordon Royle](http://mapleta.maths.uwa.edu.au/~gordon/sudokumin.php). The website is 
 currently down, but can be 
 [accessed through Internet Archive's Wayback Machine](https://web.archive.org/web/20120722180233/http://mapleta.maths.uwa.edu.au/~gordon/sudokumin.php).
     
