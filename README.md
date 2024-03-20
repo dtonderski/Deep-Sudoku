@@ -2,7 +2,7 @@
 A sudoku solving package using Monte Carlo Graph Search and AI. Inspired by the AlphaZero paper
 "[Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)".
 
-## Running
+## Usage
 To install the framework, simply run
 ```
 pip install --upgrade --quiet git+https://github.com/dtonderski/DeepSudoku
