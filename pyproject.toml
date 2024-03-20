@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deepsudoku"
+version = "1.0.0"
+description = "Solving Sudokus using a Neural Network assisted Monte-Carlo approach."
+authors = [{ name = "David Tonderski", email = "dtonderski@gmail.com" }]
+license = {text = "GNU GPLv3"}
+readme = "README.md"
+keywords = ["sudoku", "neural-network", "monte-carlo"]
+dependencies = [
+  "numpy",
+  "py-sudoku",
+  "einops",
+  "torch",
+  "torchvision",
+]
+
+[project.urls]
+Repository = "https://github.com/dtonderski/DeepSudoku"
+
+[tool.setuptools.packages.find]
+where = ["deepsudoku"]
+
+[tool.setuptools.package-data]
+mypkg = ["*.pkl", "*.pth"]
